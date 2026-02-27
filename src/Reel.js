@@ -1,9 +1,9 @@
 // src/Reel.js
 import { getRandomSymbol } from './SymbolMap.js';
 
-const SYMBOL_SIZE = 110;
-const SPIN_DURATION = 60; // frames
-const SPIN_SPEED = 28;    // píxeles por frame
+const SYMBOL_SIZE  = 110;
+const SPIN_DURATION = 180; 
+const SPIN_SPEED    = 18; 
 
 export class Reel {
   constructor(app, pool, x, y, width, height, rows) {
@@ -75,19 +75,23 @@ export class Reel {
     this.frameCount++;
 
     for (const sym of this.symbols) {
-      sym.y += SPIN_SPEED;
-    }
+  sym.y += SPIN_SPEED;
+}
 
-    if (this.symbols[0].y >= SYMBOL_SIZE) {
-      const recycled = this.symbols.shift();
-      recycled.y = this.symbols[0].y - SYMBOL_SIZE;
-
-      const newData = getRandomSymbol(this.pool);
-      recycled.destroy();
-      const newSym = this._createSymbol(newData, 0);
-      newSym.y = recycled.y;
-      this.symbols.unshift(newSym);
-    }
+// Reciclar el símbolo que sale por abajo, subirlo al principio
+const last = this.symbols[this.symbols.length - 1];
+if (this.symbols[0].y > SYMBOL_SIZE) {
+  const newData = getRandomSymbol(this.pool);
+  
+  // Mover el último al principio con nuevo símbolo
+  const recycled = this.symbols.pop();
+  recycled.destroy();
+  
+  const topY = this.symbols[0].y - SYMBOL_SIZE;
+  const newSym = this._createSymbol(newData, 0);
+  newSym.y = topY;
+  this.symbols.unshift(newSym);
+}
 
     if (this.frameCount >= SPIN_DURATION) {
       this.spinning = false;
