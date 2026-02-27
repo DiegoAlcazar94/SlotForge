@@ -1,6 +1,7 @@
 // src/main.js
 import { buildWeightedPool } from './SymbolMap.js';
 import { Reel } from './Reel.js';
+import { WinChecker } from './WinChecker.js';
 
 const APP_WIDTH  = 800;
 const APP_HEIGHT = 600;
@@ -25,6 +26,8 @@ const reelWidth = 120;
 const reelHeight = 360; // 3 filas x 120px cada una
 
 const reels = [];
+const winChecker = new WinChecker();
+let reelsStopped = 0;
 
 for (let i = 0; i < REEL_COUNT; i++) {
   const reel = new Reel(
@@ -40,26 +43,32 @@ for (let i = 0; i < REEL_COUNT; i++) {
 }
 
 // Botón de spin temporal (lo estilizaremos en el siguiente commit)
-const spinBtn = document.createElement('button');
-spinBtn.textContent = 'SPIN';
-spinBtn.style.cssText = `
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 16px 48px;
-  font-size: 24px;
-  background: #FFD700;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  letter-spacing: 4px;
-`;
-document.body.appendChild(spinBtn);
-
 spinBtn.addEventListener('click', () => {
+  reelsStopped = 0;
+
   reels.forEach((reel, i) => {
-    // Cada rodillo empieza con un pequeño delay escalonado
-    setTimeout(() => reel.spin(), i * 150);
+    setTimeout(() => {
+      reel.spin(() => {
+        // Callback que se ejecuta cuando este rodillo para
+        reelsStopped++;
+        if (reelsStopped === reels.length) {
+          _checkWins();
+        }
+      });
+    }, i * 150);
   });
 });
+
+function _checkWins() {
+  // Construir la matriz de símbolos visibles
+  const matrix = reels.map(reel => reel.getVisibleSymbols());
+  const wins = winChecker.check(matrix);
+
+  if (wins.length > 0) {
+    const total = wins.reduce((sum, w) => sum + w.payout, 0);
+    console.log(`WIN! Total payout: ${total}`, wins);
+    // Aquí conectaremos la UI en el siguiente commit
+  } else {
+    console.log('No win');
+  }
+}

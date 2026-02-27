@@ -13,13 +13,11 @@ export class Reel {
     this.spinning = false;
     this.frameCount = 0;
 
-    // Contenedor del rodillo
     this.container = new PIXI.Container();
     this.container.x = x;
     this.container.y = y;
     app.stage.addChild(this.container);
 
-    // Máscara para que los símbolos no se vean fuera del área
     const mask = new PIXI.Graphics();
     mask.beginFill(0xFFFFFF);
     mask.drawRect(x, y, width, height);
@@ -27,14 +25,12 @@ export class Reel {
     this.container.mask = mask;
     app.stage.addChild(mask);
 
-    // Crear los símbolos iniciales (rows + 1 extra para la animación)
     this.symbols = [];
     for (let i = 0; i < rows + 1; i++) {
       const sym = this._createSymbol(getRandomSymbol(pool), i);
       this.symbols.push(sym);
     }
 
-    // Loop de animación
     app.ticker.add(() => this._update());
   }
 
@@ -42,7 +38,6 @@ export class Reel {
     const container = new PIXI.Container();
     container.y = rowIndex * SYMBOL_SIZE;
 
-    // Fondo del símbolo
     const bg = new PIXI.Graphics();
     bg.beginFill(0x1a1a2e);
     bg.lineStyle(2, data.color, 0.6);
@@ -50,7 +45,6 @@ export class Reel {
     bg.endFill();
     container.addChild(bg);
 
-    // Texto del símbolo (sustituirás esto por sprites cuando tengas assets)
     const text = new PIXI.Text(data.label, {
       fontFamily: 'Arial Black',
       fontSize: 36,
@@ -68,10 +62,11 @@ export class Reel {
     return container;
   }
 
-  spin() {
+  spin(onComplete = null) {
     if (this.spinning) return;
     this.spinning = true;
     this.frameCount = 0;
+    this.onComplete = onComplete;
   }
 
   _update() {
@@ -79,12 +74,10 @@ export class Reel {
 
     this.frameCount++;
 
-    // Mover todos los símbolos hacia abajo
     for (const sym of this.symbols) {
       sym.y += SPIN_SPEED;
     }
 
-    // Si el primer símbolo sale del área, reciclarlo arriba con nuevo símbolo
     if (this.symbols[0].y >= SYMBOL_SIZE) {
       const recycled = this.symbols.shift();
       recycled.y = this.symbols[0].y - SYMBOL_SIZE;
@@ -96,21 +89,19 @@ export class Reel {
       this.symbols.unshift(newSym);
     }
 
-    // Parar después de SPIN_DURATION frames
     if (this.frameCount >= SPIN_DURATION) {
       this.spinning = false;
       this._snapToGrid();
+      if (this.onComplete) this.onComplete();
     }
   }
 
   _snapToGrid() {
-    // Alinear los símbolos exactamente a la cuadrícula
     for (let i = 0; i < this.symbols.length; i++) {
       this.symbols[i].y = i * SYMBOL_SIZE;
     }
   }
 
-  // Devuelve los símbolos visibles (para el WinChecker)
   getVisibleSymbols() {
     return this.symbols.slice(0, this.rows).map(s => s.symbolData);
   }
