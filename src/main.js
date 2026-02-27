@@ -2,6 +2,7 @@
 import { buildWeightedPool } from './SymbolMap.js';
 import { Reel } from './Reel.js';
 import { WinChecker } from './WinChecker.js';
+import { WinAnimator } from './WinAnimator.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -41,6 +42,7 @@ for (let i = 0; i < REEL_COUNT; i++) {
   );
   reels.push(reel);
 }
+const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY);
 
 // ── PANEL INFERIOR ────────────────────────────────────────
 const panel = new PIXI.Graphics();
@@ -186,7 +188,7 @@ function _drawSpinBtn(g, disabled) {
 // ── LÓGICA SPIN ───────────────────────────────────────────
 function _onSpin() {
   if (isSpinning || balance < bet) return;
-
+  winAnimator.clear();
   isSpinning = true;
   reelsStopped = 0;
   winText.text = '0';
@@ -211,11 +213,17 @@ function _checkWins() {
   const matrix = reels.map(reel => reel.getVisibleSymbols());
   const wins   = winChecker.check(matrix, bet);
 
+  // Limpiar animaciones del spin anterior siempre
+  winAnimator.clear();
+
   if (wins.length > 0) {
     const total = wins.reduce((sum, w) => sum + w.payout, 0);
-    balance += total;
-    winText.text  = `${total}`;
+    balance         += total;
+    winText.text     = `${total}`;
     balanceText.text = `${balance}`;
+
+    // Lanzar animaciones de victoria
+    winAnimator.playWins(wins, reels);
   }
 
   isSpinning = false;

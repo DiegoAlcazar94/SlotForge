@@ -109,4 +109,7 @@ if (this.symbols[0].y > SYMBOL_SIZE) {
   getVisibleSymbols() {
     return this.symbols.slice(0, this.rows).map(s => s.symbolData);
   }
+  getSymbolAt(rowIndex) {
+  return this.symbols[rowIndex] ?? null;
+}
 }
