@@ -4,6 +4,7 @@ import { Reel } from './Reel.js';
 import { WinChecker } from './WinChecker.js';
 import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
+import { ScaleManager } from './ScaleManager.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -16,8 +17,10 @@ const app = new PIXI.Application({
   height: APP_HEIGHT,
   backgroundColor: 0x0a0a0f,
   antialias: true,
+  eventMode: 'dynamic',
 });
 document.body.appendChild(app.view);
+const scaleManager = new ScaleManager(app, APP_WIDTH, APP_HEIGHT);
 
 const weightedPool = buildWeightedPool();
 const winChecker   = new WinChecker();
