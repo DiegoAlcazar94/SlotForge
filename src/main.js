@@ -36,6 +36,8 @@ function _initGame(settings) {
 
   // Aplicar settings
   soundManager.setEnabled(settings.soundEnabled);
+  soundManager.setMusicEnabled(settings.musicEnabled);
+soundManager.startMusic();
 
   let reelsStopped = 0;
   let balance      = 1000;
