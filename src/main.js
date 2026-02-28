@@ -19,7 +19,6 @@ const app = new PIXI.Application({
   height: APP_HEIGHT,
   backgroundColor: 0x0a0a0f,
   antialias: true,
-  eventMode: 'dynamic',
 });
 document.body.appendChild(app.view);
 
