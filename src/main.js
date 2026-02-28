@@ -6,6 +6,7 @@ import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
 import { LoadingScreen } from './LoadingScreen.js';
+import { StartScreen } from './StartScreen.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -23,18 +24,23 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 
 const scaleManager = new ScaleManager(app, APP_WIDTH, APP_HEIGHT);
-new LoadingScreen(app, () => _initGame());
+new LoadingScreen(app, () => {
+  new StartScreen(app, (settings) => _initGame(settings));
+});
 
-// ── TODO EL JUEGO ARRANCA AQUÍ TRAS LA LOADING SCREEN ────
-function _initGame() {
+function _initGame(settings) {
 
   const weightedPool = buildWeightedPool();
   const winChecker   = new WinChecker();
   const soundManager = new SoundManager();
-  let reelsStopped   = 0;
-  let balance        = 1000;
-  let bet            = 10;
-  let isSpinning     = false;
+
+  // Aplicar settings
+  soundManager.setEnabled(settings.soundEnabled);
+
+  let reelsStopped = 0;
+  let balance      = 1000;
+  let bet          = settings.initialBet;
+  let isSpinning   = false;
 
   // ── RODILLOS ────────────────────────────────────────────
   const reelAreaX = 50;
@@ -201,10 +207,10 @@ function _initGame() {
     if (isSpinning || balance < bet) return;
 
     winAnimator.clear();
-    isSpinning   = true;
-    reelsStopped = 0;
-    winText.text = '0';
-    balance     -= bet;
+    isSpinning       = true;
+    reelsStopped     = 0;
+    winText.text     = '0';
+    balance         -= bet;
     balanceText.text = `${balance}`;
 
     _drawSpinBtn(spinBg, true);
