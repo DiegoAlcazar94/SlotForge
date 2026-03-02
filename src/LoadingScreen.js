@@ -176,17 +176,9 @@ export class LoadingScreen {
   }
 
   _fadeOut() {
-    let alpha = 1;
-    const fade = this.app.ticker.add(() => {
-      alpha -= 0.04;
-      this.container.alpha = Math.max(0, alpha);
-      if (alpha <= 0) {
-        this.app.ticker.remove(fade);
-        this.app.ticker.remove(this._updateFn);
-        this.app.stage.removeChild(this.container);
-        this.container.destroy({ children: true });
-        this.onComplete();
-      }
-    });
-  }
+  this.app.ticker.remove(this._updateFn);
+  this.app.stage.removeChild(this.container);
+  this.container.destroy({ children: true });
+  this.onComplete();
+}
 }

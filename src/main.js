@@ -6,6 +6,7 @@ import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
 import { LoadingScreen } from './LoadingScreen.js';
+import { StartScreen } from './StartScreen.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -30,7 +31,6 @@ let balance        = 1000;
 let bet            = 10;
 let isSpinning     = false;
 
-// ── RODILLOS ──────────────────────────────────────────────
 const reelAreaX = 50;
 const reelAreaY = 60;
 
@@ -50,7 +50,6 @@ for (let i = 0; i < REEL_COUNT; i++) {
 
 const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY);
 
-// ── PANEL INFERIOR ────────────────────────────────────────
 const panel = new PIXI.Graphics();
 panel.beginFill(0x12122a);
 panel.drawRect(0, APP_HEIGHT - 130, APP_WIDTH, 130);
@@ -63,7 +62,6 @@ line.moveTo(0, APP_HEIGHT - 130);
 line.lineTo(APP_WIDTH, APP_HEIGHT - 130);
 app.stage.addChild(line);
 
-// ── ESTILOS DE TEXTO ──────────────────────────────────────
 const labelStyle = new PIXI.TextStyle({
   fontFamily:    'Arial',
   fontSize:      13,
@@ -78,7 +76,6 @@ const valueStyle = new PIXI.TextStyle({
   fontWeight: 'bold',
 });
 
-// ── BALANCE ───────────────────────────────────────────────
 const balanceLabel = new PIXI.Text('BALANCE', labelStyle);
 balanceLabel.x = 60;
 balanceLabel.y = APP_HEIGHT - 115;
@@ -89,7 +86,6 @@ balanceText.x = 60;
 balanceText.y = APP_HEIGHT - 95;
 app.stage.addChild(balanceText);
 
-// ── BET ───────────────────────────────────────────────────
 const betLabel = new PIXI.Text('BET', labelStyle);
 betLabel.x = 60;
 betLabel.y = APP_HEIGHT - 60;
@@ -100,7 +96,6 @@ betText.x = 60;
 betText.y = APP_HEIGHT - 42;
 app.stage.addChild(betText);
 
-// ── WIN ───────────────────────────────────────────────────
 const winLabel = new PIXI.Text('WIN', labelStyle);
 winLabel.x = 220;
 winLabel.y = APP_HEIGHT - 115;
@@ -111,13 +106,12 @@ winText.x = 220;
 winText.y = APP_HEIGHT - 95;
 app.stage.addChild(winText);
 
-// ── BOTONES DE APUESTA ────────────────────────────────────
 function makeTextButton(label, x, y, onClick) {
-  const container = new PIXI.Container();
-  container.x = x;
-  container.y = y;
+  const container       = new PIXI.Container();
+  container.x           = x;
+  container.y           = y;
   container.interactive = true;
-  container.cursor = 'pointer';
+  container.cursor      = 'pointer';
 
   const bg = new PIXI.Graphics();
   bg.beginFill(0x1e1e3f);
@@ -152,12 +146,11 @@ makeTextButton('+', 200, APP_HEIGHT - 50, () => {
   if (bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
 });
 
-// ── BOTÓN SPIN ────────────────────────────────────────────
-const spinContainer = new PIXI.Container();
-spinContainer.x = APP_WIDTH / 2 - 70;
-spinContainer.y = APP_HEIGHT - 110;
+const spinContainer       = new PIXI.Container();
+spinContainer.x           = APP_WIDTH / 2 - 70;
+spinContainer.y           = APP_HEIGHT - 110;
 spinContainer.interactive = true;
-spinContainer.cursor = 'pointer';
+spinContainer.cursor      = 'pointer';
 
 const spinBg = new PIXI.Graphics();
 _drawSpinBtn(spinBg, false);
@@ -190,7 +183,6 @@ function _drawSpinBtn(g, disabled) {
   g.endFill();
 }
 
-// ── LÓGICA SPIN ───────────────────────────────────────────
 function _onSpin() {
   if (isSpinning || balance < bet) return;
 
@@ -238,7 +230,9 @@ function _checkWins() {
   _drawSpinBtn(spinBg, false);
 }
 
-// ── LOADING SCREEN — se pone encima de todo al final ──────
+// ── PANTALLAS ENCIMA DEL JUEGO ────────────────────────────
 new LoadingScreen(app, () => {
-  console.log('ready');
-});
+  new StartScreen(app, () => {
+    console.log('ready');
+  });
+}); 
