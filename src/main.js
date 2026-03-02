@@ -1,10 +1,11 @@
+// src/main.js
 import { buildWeightedPool } from './SymbolMap.js';
 import { Reel } from './Reel.js';
 import { WinChecker } from './WinChecker.js';
 import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
-import { LoadingScreen } from './LoadingScreen.js'; // ← única línea nueva
+import { LoadingScreen } from './LoadingScreen.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -21,14 +22,9 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 
 const scaleManager = new ScaleManager(app, APP_WIDTH, APP_HEIGHT);
-_initGame();
-
-new LoadingScreen(app, () => {
-  console.log('Loading complete');
-});
-
 const weightedPool = buildWeightedPool();
 const winChecker   = new WinChecker();
+const soundManager = new SoundManager();
 let reelsStopped   = 0;
 let balance        = 1000;
 let bet            = 10;
@@ -51,8 +47,8 @@ for (let i = 0; i < REEL_COUNT; i++) {
   );
   reels.push(reel);
 }
+
 const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY);
-const soundManager = new SoundManager();
 
 // ── PANEL INFERIOR ────────────────────────────────────────
 const panel = new PIXI.Graphics();
@@ -61,29 +57,28 @@ panel.drawRect(0, APP_HEIGHT - 130, APP_WIDTH, 130);
 panel.endFill();
 app.stage.addChild(panel);
 
-// Línea separadora del panel
 const line = new PIXI.Graphics();
 line.lineStyle(2, 0x3333aa, 0.8);
 line.moveTo(0, APP_HEIGHT - 130);
 line.lineTo(APP_WIDTH, APP_HEIGHT - 130);
 app.stage.addChild(line);
 
-// ── TEXTO BALANCE ─────────────────────────────────────────
+// ── ESTILOS DE TEXTO ──────────────────────────────────────
 const labelStyle = new PIXI.TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 13,
-  fill: 0x8888bb,
+  fontFamily:    'Arial',
+  fontSize:      13,
+  fill:          0x8888bb,
   letterSpacing: 3,
 });
 
 const valueStyle = new PIXI.TextStyle({
   fontFamily: 'Arial Black',
-  fontSize: 22,
-  fill: 0xFFFFFF,
+  fontSize:   22,
+  fill:       0xFFFFFF,
   fontWeight: 'bold',
 });
 
-// Balance
+// ── BALANCE ───────────────────────────────────────────────
 const balanceLabel = new PIXI.Text('BALANCE', labelStyle);
 balanceLabel.x = 60;
 balanceLabel.y = APP_HEIGHT - 115;
@@ -94,7 +89,7 @@ balanceText.x = 60;
 balanceText.y = APP_HEIGHT - 95;
 app.stage.addChild(balanceText);
 
-// Bet
+// ── BET ───────────────────────────────────────────────────
 const betLabel = new PIXI.Text('BET', labelStyle);
 betLabel.x = 60;
 betLabel.y = APP_HEIGHT - 60;
@@ -105,7 +100,7 @@ betText.x = 60;
 betText.y = APP_HEIGHT - 42;
 app.stage.addChild(betText);
 
-// Win
+// ── WIN ───────────────────────────────────────────────────
 const winLabel = new PIXI.Text('WIN', labelStyle);
 winLabel.x = 220;
 winLabel.y = APP_HEIGHT - 115;
@@ -133,8 +128,8 @@ function makeTextButton(label, x, y, onClick) {
 
   const txt = new PIXI.Text(label, {
     fontFamily: 'Arial Black',
-    fontSize: 14,
-    fill: 0xaaaaff,
+    fontSize:   14,
+    fill:       0xaaaaff,
   });
   txt.anchor.set(0.5);
   txt.x = 20;
@@ -169,10 +164,10 @@ _drawSpinBtn(spinBg, false);
 spinContainer.addChild(spinBg);
 
 const spinTxt = new PIXI.Text('SPIN', {
-  fontFamily: 'Arial Black',
-  fontSize: 26,
-  fill: 0x0a0a0f,
-  fontWeight: 'bold',
+  fontFamily:    'Arial Black',
+  fontSize:      26,
+  fill:          0x0a0a0f,
+  fontWeight:    'bold',
   letterSpacing: 4,
 });
 spinTxt.anchor.set(0.5);
@@ -198,27 +193,28 @@ function _drawSpinBtn(g, disabled) {
 // ── LÓGICA SPIN ───────────────────────────────────────────
 function _onSpin() {
   if (isSpinning || balance < bet) return;
+
   winAnimator.clear();
-  isSpinning = true;
-  reelsStopped = 0;
-  winText.text = '0';
-  balance -= bet;
+  isSpinning       = true;
+  reelsStopped     = 0;
+  winText.text     = '0';
+  balance         -= bet;
   balanceText.text = `${balance}`;
 
   _drawSpinBtn(spinBg, true);
 
   reels.forEach((reel, i) => {
-  setTimeout(() => {
-    soundManager.playReelTick(); // ← añade esta línea
-    reel.spin(() => {
-      soundManager.playReelStop(); // ← y esta
-      reelsStopped++;
-      if (reelsStopped === reels.length) {
-        _checkWins();
-      }
-    });
-  }, i * 150);
-});
+    setTimeout(() => {
+      soundManager.playReelTick();
+      reel.spin(() => {
+        soundManager.playReelStop();
+        reelsStopped++;
+        if (reelsStopped === reels.length) {
+          _checkWins();
+        }
+      });
+    }, i * 150);
+  });
 }
 
 function _checkWins() {
@@ -228,16 +224,21 @@ function _checkWins() {
   winAnimator.clear();
 
   if (wins.length > 0) {
-    const total = wins.reduce((sum, w) => sum + w.payout, 0);
+    const total      = wins.reduce((sum, w) => sum + w.payout, 0);
     balance         += total;
     winText.text     = `${total}`;
     balanceText.text = `${balance}`;
     winAnimator.playWins(wins, reels);
-    soundManager.playWin(total / bet); // ← victoria
+    soundManager.playWin(total / bet);
   } else {
-    soundManager.playNoWin();          // ← sin premio
+    soundManager.playNoWin();
   }
 
   isSpinning = false;
   _drawSpinBtn(spinBg, false);
 }
+
+// ── LOADING SCREEN — se pone encima de todo al final ──────
+new LoadingScreen(app, () => {
+  console.log('ready');
+});
