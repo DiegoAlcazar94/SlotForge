@@ -1,10 +1,10 @@
-// src/main.js
 import { buildWeightedPool } from './SymbolMap.js';
 import { Reel } from './Reel.js';
 import { WinChecker } from './WinChecker.js';
 import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
+import { LoadingScreen } from './LoadingScreen.js'; // ← única línea nueva
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -17,10 +17,15 @@ const app = new PIXI.Application({
   height: APP_HEIGHT,
   backgroundColor: 0x0a0a0f,
   antialias: true,
-  eventMode: 'dynamic',
 });
 document.body.appendChild(app.view);
+
 const scaleManager = new ScaleManager(app, APP_WIDTH, APP_HEIGHT);
+_initGame();
+
+new LoadingScreen(app, () => {
+  console.log('Loading complete');
+});
 
 const weightedPool = buildWeightedPool();
 const winChecker   = new WinChecker();
