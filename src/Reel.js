@@ -70,35 +70,31 @@ export class Reel {
   }
 
   _update() {
-    if (!this.spinning) return;
+  if (!this.spinning) return;
 
-    this.frameCount++;
+  this.frameCount++;
 
-    for (const sym of this.symbols) {
-  sym.y += SPIN_SPEED;
-}
-
-// Reciclar el símbolo que sale por abajo, subirlo al principio
-const last = this.symbols[this.symbols.length - 1];
-if (this.symbols[0].y > SYMBOL_SIZE) {
-  const newData = getRandomSymbol(this.pool);
-  
-  // Mover el último al principio con nuevo símbolo
-  const recycled = this.symbols.pop();
-  recycled.destroy();
-  
-  const topY = this.symbols[0].y - SYMBOL_SIZE;
-  const newSym = this._createSymbol(newData, 0);
-  newSym.y = topY;
-  this.symbols.unshift(newSym);
-}
-
-    if (this.frameCount >= SPIN_DURATION) {
-      this.spinning = false;
-      this._snapToGrid();
-      if (this.onComplete) this.onComplete();
-    }
+  for (const sym of this.symbols) {
+    sym.y += SPIN_SPEED;
   }
+
+  if (this.symbols[0].y > SYMBOL_SIZE) {
+    const newData  = getRandomSymbol(this.pool);
+    const recycled = this.symbols.pop();
+    recycled.destroy();
+
+    const topY   = this.symbols[0].y - SYMBOL_SIZE;
+    const newSym = this._createSymbol(newData, 0);
+    newSym.y     = topY;
+    this.symbols.unshift(newSym);
+  }
+
+  if (this.frameCount >= SPIN_DURATION) {
+    this.spinning = false;
+    this._snapToGrid();
+    if (this.onComplete) this.onComplete();
+  }
+}
 
   _snapToGrid() {
     for (let i = 0; i < this.symbols.length; i++) {

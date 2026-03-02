@@ -183,7 +183,6 @@ export class LoadingScreen {
       if (alpha <= 0) {
         this.app.ticker.remove(fade);
         this.app.ticker.remove(this._updateFn);
-        // Quitar del stage limpiamente
         this.app.stage.removeChild(this.container);
         this.container.destroy({ children: true });
         this.onComplete();

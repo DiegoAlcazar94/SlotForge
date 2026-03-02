@@ -6,7 +6,6 @@ import { WinAnimator } from './WinAnimator.js';
 import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
 import { LoadingScreen } from './LoadingScreen.js';
-import { StartScreen } from './StartScreen.js';
 
 const APP_WIDTH   = 800;
 const APP_HEIGHT  = 600;
@@ -239,11 +238,7 @@ function _checkWins() {
   _drawSpinBtn(spinBg, false);
 }
 
-// ── PANTALLAS DE INICIO — encima del juego ────────────────
+// ── LOADING SCREEN — se pone encima de todo al final ──────
 new LoadingScreen(app, () => {
-  new StartScreen(app, (settings) => {
-    soundManager.setEnabled(settings.soundEnabled);
-    soundManager.setMusicEnabled(settings.musicEnabled);
-    if (settings.musicEnabled) soundManager.startMusic();
-  });
+  console.log('ready');
 });
