@@ -1,75 +1,64 @@
 // src/WinChecker.js
 
 export const PAYLINES = [
-  [1, 1, 1, 1, 1], // línea central
-  [0, 0, 0, 0, 0], // línea superior
-  [2, 2, 2, 2, 2], // línea inferior
-  [0, 1, 2, 1, 0], // V hacia abajo
-  [2, 1, 0, 1, 2], // V hacia arriba
-  [0, 0, 1, 2, 2], // diagonal descendente
-  [2, 2, 1, 0, 0], // diagonal ascendente
-  [1, 0, 0, 0, 1], // U superior
-  [1, 2, 2, 2, 1], // U inferior
+  [1, 1, 1, 1, 1],
+  [0, 0, 0, 0, 0],
+  [2, 2, 2, 2, 2],
+  [0, 1, 2, 1, 0],
+  [2, 1, 0, 1, 2],
+  [0, 0, 1, 2, 2],
+  [2, 2, 1, 0, 0],
+  [1, 0, 0, 0, 1],
+  [1, 2, 2, 2, 1],
 ];
 
 export class WinChecker {
   check(reelsSymbols, bet = 1) {
     const results = [];
-
     for (let lineIndex = 0; lineIndex < PAYLINES.length; lineIndex++) {
       const line = PAYLINES[lineIndex];
-
-      const lineSymbols = line.map((rowIndex, reelIndex) => {
-        return reelsSymbols[reelIndex][rowIndex];
-      });
-
+      const lineSymbols = line.map((rowIndex, reelIndex) => reelsSymbols[reelIndex][rowIndex]);
       const winData = this._evaluateLine(lineSymbols, bet);
-
       if (winData) {
-        results.push({
-          paylineIndex: lineIndex,
-          payline:      line,
-          ...winData,
-        });
+        results.push({ paylineIndex: lineIndex, payline: line, ...winData });
       }
     }
-
     return results;
   }
 
-  _evaluateLine(symbols, bet) {
-    // Encontrar el primer símbolo que no sea wild
-    // para saber qué símbolo representa la línea
-    let baseSymbol = null;
-    for (const sym of symbols) {
-      if (sym.id !== 'wild') {
-        baseSymbol = sym;
-        break;
+  checkScatter(reelsSymbols, bet = 1) {
+    const positions = [];
+    for (let reel = 0; reel < reelsSymbols.length; reel++) {
+      for (let row = 0; row < reelsSymbols[reel].length; row++) {
+        if (reelsSymbols[reel][row].id === 'scatter') {
+          positions.push({ reel, row });
+        }
       }
     }
+    const count = positions.length;
+    if (count < 3) return null;
 
-    // Si todos son wilds, el wild paga con su propio paytable
+    const scatterSym = reelsSymbols.find(r => r.find(s => s.id === 'scatter'))
+                                   .find(s => s.id === 'scatter');
+    const payout = (scatterSym.payout?.[count] ?? 0) * bet;
+    return { count, payout, positions };
+  }
+
+  _evaluateLine(symbols, bet) {
+    let baseSymbol = null;
+    for (const sym of symbols) {
+      if (sym.id !== 'wild') { baseSymbol = sym; break; }
+    }
     if (!baseSymbol) baseSymbol = symbols[0];
 
     let matchCount = 0;
-
     for (const sym of symbols) {
-      if (sym.id === baseSymbol.id || sym.id === 'wild') {
-        matchCount++;
-      } else {
-        break; // cadena rota
-      }
+      if (sym.id === baseSymbol.id || sym.id === 'wild') matchCount++;
+      else break;
     }
-
     if (matchCount < 3) return null;
-
     const payout = baseSymbol.payout?.[matchCount] ?? 0;
     if (payout === 0) return null;
-
-    return {
-      symbolId:   baseSymbol.id,
-      matchCount,
-      payout:     payout * bet,
-    };
+    return { symbolId: baseSymbol.id, matchCount, payout: payout * bet };
   }
 }

@@ -1,6 +1,7 @@
 // src/WinAnimator.js
 
-const HIGHLIGHT_COLOR = 0xFFD700;
+const HIGHLIGHT_COLOR  = 0xFFD700;
+const SCATTER_COLOR    = 0x00ffcc;
 
 export class WinAnimator {
   constructor(app, reelAreaX, reelAreaY, symbolSize = 83, reelSpacing = 5) {
@@ -31,6 +32,30 @@ export class WinAnimator {
       this._spawnParticles(win.payline, win.matchCount);
     }
     this._pulsing = true;
+  }
+
+  highlightScatters(positions) {
+    const sz = this.symbolSize;
+    for (const { reel, row } of positions) {
+      const frame = new PIXI.Graphics();
+      frame.lineStyle(4, SCATTER_COLOR, 1);
+      frame.drawRoundedRect(
+        this.reelAreaX + reel * (sz + this.reelSpacing) + 2,
+        this.reelAreaY + row  * sz + 2,
+        sz - 4, sz - 4, 8
+      );
+      this.overlayContainer.addChild(frame);
+
+      const pulse = new PIXI.Graphics();
+      pulse.beginFill(SCATTER_COLOR, 0.15);
+      pulse.drawRoundedRect(
+        this.reelAreaX + reel * (sz + this.reelSpacing) + 2,
+        this.reelAreaY + row  * sz + 2,
+        sz - 4, sz - 4, 8
+      );
+      pulse.endFill();
+      this.overlayContainer.addChild(pulse);
+    }
   }
 
   clear() {
@@ -118,12 +143,12 @@ export class WinAnimator {
         particle.beginFill(color, 0.9);
         particle.drawCircle(0, 0, Math.random() * 5 + 2);
         particle.endFill();
-        particle.x    = cx;
-        particle.y    = cy;
-        const angle   = Math.random() * Math.PI * 2;
-        const speed   = Math.random() * 4 + 2;
-        particle._vx  = Math.cos(angle) * speed;
-        particle._vy  = Math.sin(angle) * speed - 3;
+        particle.x     = cx;
+        particle.y     = cy;
+        const angle    = Math.random() * Math.PI * 2;
+        const speed    = Math.random() * 4 + 2;
+        particle._vx   = Math.cos(angle) * speed;
+        particle._vy   = Math.sin(angle) * speed - 3;
         particle._life = 1;
         this.overlayContainer.addChild(particle);
         this._particles.push(particle);
