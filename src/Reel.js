@@ -1,15 +1,15 @@
 // src/Reel.js
 import { getRandomSymbol } from './SymbolMap.js';
 
-const SYMBOL_SIZE   = 110;
 const SPIN_DURATION = 180;
-const SPIN_SPEED    = 18;
+const SPIN_SPEED    = 14;   // era 18 — escalado con el nuevo symbolSize (~83/110 * 18)
 
 export class Reel {
-  constructor(app, pool, x, y, width, height, rows) {
+  constructor(app, pool, x, y, symbolSize, height, rows) {
     this.app        = app;
     this.pool       = pool;
     this.rows       = rows;
+    this.symbolSize = symbolSize;   // ← ahora usa el valor pasado desde main.js
     this.spinning   = false;
     this.frameCount = 0;
     this.onComplete = null;
@@ -21,7 +21,7 @@ export class Reel {
 
     const mask = new PIXI.Graphics();
     mask.beginFill(0xFFFFFF);
-    mask.drawRect(x, y, width, height);
+    mask.drawRect(x, y, symbolSize, height);
     mask.endFill();
     this.container.mask = mask;
     app.stage.addChild(mask);
@@ -36,28 +36,27 @@ export class Reel {
   }
 
   _createSymbol(data, rowIndex) {
-  const container = new PIXI.Container();
-  container.y     = rowIndex * SYMBOL_SIZE;
-  container.symbolData = data;
+    const sz        = this.symbolSize;
+    const container = new PIXI.Container();
+    container.y     = rowIndex * sz;
+    container.symbolData = data;
 
-  // Brillo suave detrás del símbolo en lugar del recuadro azul
-  const glow = new PIXI.Graphics();
-  glow.beginFill(0xFFD700, 0.08);
-  glow.drawRoundedRect(6, 6, SYMBOL_SIZE - 12, SYMBOL_SIZE - 12, 10);
-  glow.endFill();
-  container.addChild(glow);
+    const glow = new PIXI.Graphics();
+    glow.beginFill(0xFFD700, 0.08);
+    glow.drawRoundedRect(5, 5, sz - 10, sz - 10, 8);
+    glow.endFill();
+    container.addChild(glow);
 
-  // Sprite de la imagen
-  const sprite  = PIXI.Sprite.from(data.path);
-  sprite.width  = SYMBOL_SIZE - 8;
-  sprite.height = SYMBOL_SIZE - 8;
-  sprite.x      = 4;
-  sprite.y      = 4;
-  container.addChild(sprite);
+    const sprite  = PIXI.Sprite.from(data.path);
+    sprite.width  = sz - 6;
+    sprite.height = sz - 6;
+    sprite.x      = 3;
+    sprite.y      = 3;
+    container.addChild(sprite);
 
-  this.container.addChild(container);
-  return container;
-}
+    this.container.addChild(container);
+    return container;
+  }
 
   spin(onComplete = null) {
     if (this.spinning) return;
@@ -69,18 +68,19 @@ export class Reel {
   _update() {
     if (!this.spinning) return;
 
+    const sz = this.symbolSize;
     this.frameCount++;
 
     for (const sym of this.symbols) {
       sym.y += SPIN_SPEED;
     }
 
-    if (this.symbols[0].y > SYMBOL_SIZE) {
+    if (this.symbols[0].y > sz) {
       const newData  = getRandomSymbol(this.pool);
       const recycled = this.symbols.pop();
       recycled.destroy({ children: true });
 
-      const topY   = this.symbols[0].y - SYMBOL_SIZE;
+      const topY   = this.symbols[0].y - sz;
       const newSym = this._createSymbol(newData, 0);
       newSym.y     = topY;
       this.symbols.unshift(newSym);
@@ -94,8 +94,9 @@ export class Reel {
   }
 
   _snapToGrid() {
+    const sz = this.symbolSize;
     for (let i = 0; i < this.symbols.length; i++) {
-      this.symbols[i].y = i * SYMBOL_SIZE;
+      this.symbols[i].y = i * sz;
     }
   }
 

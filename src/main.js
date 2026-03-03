@@ -12,7 +12,19 @@ const APP_WIDTH   = 1392;
 const APP_HEIGHT  = 768;
 const REEL_COUNT  = 5;
 const ROW_COUNT   = 3;
-const SYMBOL_SIZE = 110;
+const SYMBOL_SIZE = 83;        // ← era 110  (~25% reducción)
+const PANEL_H     = 160;       // ← era 140  (panel inferior más alto)
+
+// ── MARCO: 75% del tamaño original, centrado ──────────────
+const MARCO_W = 1044;          // 1392 * 0.75
+const MARCO_H = 576;           // 768  * 0.75
+const MARCO_X = (APP_WIDTH  - MARCO_W) / 2;   // 174px — espacio lateral
+const MARCO_Y = 30;            // espacio superior
+
+// ── RODILLOS: reposicionados dentro del nuevo marco ───────
+const reelAreaX = 488;         // era 418  (174 + 418*0.75)
+const reelAreaY = 187;         // era 210  ( 30 + 210*0.75)
+const reelGap   = 5;           // era 6
 
 const app = new PIXI.Application({
   width: APP_WIDTH,
@@ -41,10 +53,6 @@ let autoPlaying    = false;
 let autoSpinsLeft  = 0;
 
 // ── CAPA 2: RODILLOS ──────────────────────────────────────
-const reelAreaX = 418;
-const reelAreaY = 210;
-const reelGap   = 6;
-
 const reels = [];
 for (let i = 0; i < REEL_COUNT; i++) {
   const reel = new Reel(
@@ -59,25 +67,27 @@ for (let i = 0; i < REEL_COUNT; i++) {
   reels.push(reel);
 }
 
-const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY);
+const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap);
 
 // ── CAPA 3: MARCO — encima de rodillos ────────────────────
 const marco  = PIXI.Sprite.from('src/Assets/Symbols/Marco.png');
-marco.width  = APP_WIDTH;
-marco.height = APP_HEIGHT;
+marco.width  = MARCO_W;
+marco.height = MARCO_H;
+marco.x      = MARCO_X;
+marco.y      = MARCO_Y;
 app.stage.addChild(marco);
 
 // ── PANEL INFERIOR ────────────────────────────────────────
 const panel = new PIXI.Graphics();
 panel.beginFill(0x0a0a0f, 0.88);
-panel.drawRect(0, APP_HEIGHT - 140, APP_WIDTH, 140);
+panel.drawRect(0, APP_HEIGHT - PANEL_H, APP_WIDTH, PANEL_H);
 panel.endFill();
 app.stage.addChild(panel);
 
 const panelLine = new PIXI.Graphics();
 panelLine.lineStyle(2, 0x3333aa, 0.8);
-panelLine.moveTo(0, APP_HEIGHT - 140);
-panelLine.lineTo(APP_WIDTH, APP_HEIGHT - 140);
+panelLine.moveTo(0, APP_HEIGHT - PANEL_H);
+panelLine.lineTo(APP_WIDTH, APP_HEIGHT - PANEL_H);
 app.stage.addChild(panelLine);
 
 const labelStyle = new PIXI.TextStyle({
@@ -97,45 +107,45 @@ const valueStyle = new PIXI.TextStyle({
 // ── BALANCE ───────────────────────────────────────────────
 const balanceLabel = new PIXI.Text('BALANCE', labelStyle);
 balanceLabel.x = 80;
-balanceLabel.y = APP_HEIGHT - 125;
+balanceLabel.y = APP_HEIGHT - PANEL_H + 15;
 app.stage.addChild(balanceLabel);
 
 const balanceText = new PIXI.Text(`${balance}`, valueStyle);
 balanceText.x = 80;
-balanceText.y = APP_HEIGHT - 105;
+balanceText.y = APP_HEIGHT - PANEL_H + 35;
 app.stage.addChild(balanceText);
 
 // ── BET ───────────────────────────────────────────────────
 const betLabel = new PIXI.Text('BET', labelStyle);
 betLabel.x = 80;
-betLabel.y = APP_HEIGHT - 68;
+betLabel.y = APP_HEIGHT - PANEL_H + 88;
 app.stage.addChild(betLabel);
 
 const betText = new PIXI.Text(`${bet}`, valueStyle);
 betText.x = 80;
-betText.y = APP_HEIGHT - 48;
+betText.y = APP_HEIGHT - PANEL_H + 108;
 app.stage.addChild(betText);
 
 // ── WIN ───────────────────────────────────────────────────
 const winLabel = new PIXI.Text('WIN', labelStyle);
 winLabel.x = 300;
-winLabel.y = APP_HEIGHT - 125;
+winLabel.y = APP_HEIGHT - PANEL_H + 15;
 app.stage.addChild(winLabel);
 
 const winText = new PIXI.Text('0', valueStyle);
 winText.x = 300;
-winText.y = APP_HEIGHT - 105;
+winText.y = APP_HEIGHT - PANEL_H + 35;
 app.stage.addChild(winText);
 
 // ── AUTO SPINS RESTANTES ──────────────────────────────────
 const autoLabel = new PIXI.Text('AUTO', labelStyle);
 autoLabel.x = 520;
-autoLabel.y = APP_HEIGHT - 125;
+autoLabel.y = APP_HEIGHT - PANEL_H + 15;
 app.stage.addChild(autoLabel);
 
 const autoText = new PIXI.Text('', valueStyle);
 autoText.x = 520;
-autoText.y = APP_HEIGHT - 105;
+autoText.y = APP_HEIGHT - PANEL_H + 35;
 app.stage.addChild(autoText);
 
 // ── FUNCIÓN BOTONES PEQUEÑOS ──────────────────────────────
@@ -172,13 +182,13 @@ function makeTextButton(label, x, y, onClick) {
 }
 
 // ── BET - y + ─────────────────────────────────────────────
-makeTextButton('-', 210, APP_HEIGHT - 58, () => {
+makeTextButton('-', 210, APP_HEIGHT - PANEL_H + 98, () => {
   if (!isSpinning && !autoPlaying) {
     if (bet > 1) { bet = Math.max(1, bet - 5); betText.text = `${bet}`; }
   }
 });
 
-makeTextButton('+', 262, APP_HEIGHT - 58, () => {
+makeTextButton('+', 262, APP_HEIGHT - PANEL_H + 98, () => {
   if (!isSpinning && !autoPlaying) {
     if (bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
   }
@@ -187,7 +197,7 @@ makeTextButton('+', 262, APP_HEIGHT - 58, () => {
 // ── BOTÓN SPIN ────────────────────────────────────────────
 const spinContainer       = new PIXI.Container();
 spinContainer.x           = APP_WIDTH / 2 - 80;
-spinContainer.y           = APP_HEIGHT - 125;
+spinContainer.y           = APP_HEIGHT - PANEL_H + 15;
 spinContainer.interactive = true;
 spinContainer.cursor      = 'pointer';
 
@@ -204,7 +214,7 @@ const spinTxt = new PIXI.Text('SPIN', {
 });
 spinTxt.anchor.set(0.5);
 spinTxt.x = 80;
-spinTxt.y = 52;
+spinTxt.y = 65;
 spinContainer.addChild(spinTxt);
 
 spinContainer.on('pointerdown', _onSpin);
@@ -220,13 +230,13 @@ let selectedAuto     = 0;
 
 const spinsLabel = new PIXI.Text('SPINS', labelStyle);
 spinsLabel.x = APP_WIDTH - 230;
-spinsLabel.y = APP_HEIGHT - 125;
+spinsLabel.y = APP_HEIGHT - PANEL_H + 15;
 app.stage.addChild(spinsLabel);
 
 // Flecha izquierda
 const arrowLeft       = new PIXI.Container();
 arrowLeft.x           = APP_WIDTH - 235;
-arrowLeft.y           = APP_HEIGHT - 62;
+arrowLeft.y           = APP_HEIGHT - PANEL_H + 98;
 arrowLeft.interactive = true;
 arrowLeft.cursor      = 'pointer';
 app.stage.addChild(arrowLeft);
@@ -261,13 +271,13 @@ const spinCountTxt = new PIXI.Text(`${autoBtnOptions[selectedAuto]}`, {
 });
 spinCountTxt.anchor.set(0.5);
 spinCountTxt.x = APP_WIDTH - 178;
-spinCountTxt.y = APP_HEIGHT - 47;
+spinCountTxt.y = APP_HEIGHT - PANEL_H + 113;
 app.stage.addChild(spinCountTxt);
 
 // Flecha derecha
 const arrowRight       = new PIXI.Container();
 arrowRight.x           = APP_WIDTH - 150;
-arrowRight.y           = APP_HEIGHT - 62;
+arrowRight.y           = APP_HEIGHT - PANEL_H + 98;
 arrowRight.interactive = true;
 arrowRight.cursor      = 'pointer';
 app.stage.addChild(arrowRight);
@@ -299,7 +309,7 @@ arrowRight.on('pointerout',  () => { arrowRightBg.tint = 0xFFFFFF; });
 // ── BOTÓN AUTO/STOP ───────────────────────────────────────
 const autoContainer       = new PIXI.Container();
 autoContainer.x           = APP_WIDTH - 235;
-autoContainer.y           = APP_HEIGHT - 118;
+autoContainer.y           = APP_HEIGHT - PANEL_H + 18;
 autoContainer.interactive = true;
 autoContainer.cursor      = 'pointer';
 app.stage.addChild(autoContainer);
@@ -334,7 +344,7 @@ function _drawAutoBtn(g, active) {
 function _drawSpinBtn(g, disabled) {
   g.clear();
   g.beginFill(disabled ? 0x555555 : 0xFFD700);
-  g.drawRoundedRect(0, 0, 160, 105, 16);
+  g.drawRoundedRect(0, 0, 160, 125, 16);   // ← más alto para ocupar mejor el panel
   g.endFill();
 }
 
