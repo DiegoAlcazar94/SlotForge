@@ -59,8 +59,7 @@ for (let i = 0; i < REEL_COUNT; i++) {
   reels.push(reel);
 }
 
-const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap);
-
+// ── MARCO ─────────────────────────────────────────────────
 const marco  = PIXI.Sprite.from('src/Assets/Symbols/Marco.png');
 marco.width  = MARCO_W;
 marco.height = MARCO_H;
@@ -68,6 +67,25 @@ marco.x      = MARCO_X;
 marco.y      = MARCO_Y;
 app.stage.addChild(marco);
 
+// ── GIRL LEFT ─────────────────────────────────────────────
+const girl1  = PIXI.Sprite.from('src/Assets/Symbols/Girl1.png');
+girl1.height = MARCO_H;
+girl1.width  = girl1.height * (500 / 800);
+girl1.x      = MARCO_X - girl1.width + 170;
+girl1.y      = MARCO_Y;
+app.stage.addChild(girl1);
+
+// ── GIRL RIGHT ────────────────────────────────────────────
+const girl2  = PIXI.Sprite.from('src/Assets/Symbols/Girl2.png');
+girl2.height = MARCO_H;
+girl2.width  = girl2.height * (500 / 800);
+girl2.x      = MARCO_X + MARCO_W - 190;
+girl2.y      = MARCO_Y;
+app.stage.addChild(girl2);
+
+const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
+
+// ── PANEL INFERIOR ────────────────────────────────────────
 const panel = new PIXI.Graphics();
 panel.beginFill(0x0a0a0f, 0.88);
 panel.drawRect(0, APP_HEIGHT - PANEL_H, APP_WIDTH, PANEL_H);
@@ -312,6 +330,7 @@ function _checkWins() {
     balance         += total;
     winText.text     = `${total}`;
     balanceText.text = `${balance}`;
+    winAnimator.celebrateGirls();
   } else {
     soundManager.playNoWin();
   }

@@ -1,15 +1,17 @@
 // src/WinAnimator.js
 
-const HIGHLIGHT_COLOR  = 0xFFD700;
-const SCATTER_COLOR    = 0x00ffcc;
+const HIGHLIGHT_COLOR = 0xFFD700;
+const SCATTER_COLOR   = 0x00ffcc;
 
 export class WinAnimator {
-  constructor(app, reelAreaX, reelAreaY, symbolSize = 83, reelSpacing = 5) {
+  constructor(app, reelAreaX, reelAreaY, symbolSize = 83, reelSpacing = 5, girl1 = null, girl2 = null) {
     this.app         = app;
     this.reelAreaX   = reelAreaX;
     this.reelAreaY   = reelAreaY;
     this.symbolSize  = symbolSize;
     this.reelSpacing = reelSpacing;
+    this.girl1       = girl1;
+    this.girl2       = girl2;
 
     this.overlayContainer = new PIXI.Container();
     app.stage.addChild(this.overlayContainer);
@@ -56,6 +58,34 @@ export class WinAnimator {
       pulse.endFill();
       this.overlayContainer.addChild(pulse);
     }
+  }
+
+  celebrateGirls() {
+    if (!this.girl1 || !this.girl2) return;
+    let t        = 0;
+    const base1Y  = this.girl1.y;
+    const base2Y  = this.girl2.y;
+    const scaleX1 = this.girl1.scale.x;
+    const scaleY1 = this.girl1.scale.y;
+    const scaleX2 = this.girl2.scale.x;
+    const scaleY2 = this.girl2.scale.y;
+
+    const anim = this.app.ticker.add(() => {
+      t += 0.12;
+      const bounce = Math.abs(Math.sin(t)) * 8;
+      const delta  = 1 + Math.abs(Math.sin(t * 1.5)) * 0.02;
+
+      this.girl1.y = base1Y - bounce;
+      this.girl2.y = base2Y - bounce;
+      this.girl1.scale.set(scaleX1 * delta, scaleY1 * delta);
+      this.girl2.scale.set(scaleX2 * delta, scaleY2 * delta);
+
+      if (t >= Math.PI * 3) {
+        this.app.ticker.remove(anim);
+        this.girl1.y = base1Y; this.girl1.scale.set(scaleX1, scaleY1);
+        this.girl2.y = base2Y; this.girl2.scale.set(scaleX2, scaleY2);
+      }
+    });
   }
 
   clear() {
