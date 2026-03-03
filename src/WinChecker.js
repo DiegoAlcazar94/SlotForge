@@ -38,29 +38,36 @@ export class WinChecker {
   }
 
   _evaluateLine(symbols, bet) {
-    const first    = symbols[0];
-    let matchCount = 1;
+    // Encontrar el primer símbolo que no sea wild
+    // para saber qué símbolo representa la línea
+    let baseSymbol = null;
+    for (const sym of symbols) {
+      if (sym.id !== 'wild') {
+        baseSymbol = sym;
+        break;
+      }
+    }
 
-    for (let i = 1; i < symbols.length; i++) {
-      // Wild sustituye a cualquier símbolo
-      if (symbols[i].id === first.id || symbols[i].id === 'wild') {
-        matchCount++;
-      } else if (first.id === 'wild') {
-        // Si el primero es wild, intentar con el siguiente símbolo no-wild
+    // Si todos son wilds, el wild paga con su propio paytable
+    if (!baseSymbol) baseSymbol = symbols[0];
+
+    let matchCount = 0;
+
+    for (const sym of symbols) {
+      if (sym.id === baseSymbol.id || sym.id === 'wild') {
         matchCount++;
       } else {
-        break;
+        break; // cadena rota
       }
     }
 
     if (matchCount < 3) return null;
 
-    // El payout viene del propio símbolo definido en SymbolMap.js
-    const payout = first.payout?.[matchCount] ?? 0;
+    const payout = baseSymbol.payout?.[matchCount] ?? 0;
     if (payout === 0) return null;
 
     return {
-      symbolId:   first.id,
+      symbolId:   baseSymbol.id,
       matchCount,
       payout:     payout * bet,
     };
