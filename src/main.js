@@ -30,6 +30,8 @@ let reelsStopped   = 0;
 let balance        = 1000;
 let bet            = 10;
 let isSpinning     = false;
+let autoPlaying    = false;
+let autoSpinsLeft  = 0;
 
 const reelAreaX = 50;
 const reelAreaY = 60;
@@ -76,6 +78,7 @@ const valueStyle = new PIXI.TextStyle({
   fontWeight: 'bold',
 });
 
+// ── BALANCE ───────────────────────────────────────────────
 const balanceLabel = new PIXI.Text('BALANCE', labelStyle);
 balanceLabel.x = 60;
 balanceLabel.y = APP_HEIGHT - 115;
@@ -86,6 +89,7 @@ balanceText.x = 60;
 balanceText.y = APP_HEIGHT - 95;
 app.stage.addChild(balanceText);
 
+// ── BET ───────────────────────────────────────────────────
 const betLabel = new PIXI.Text('BET', labelStyle);
 betLabel.x = 60;
 betLabel.y = APP_HEIGHT - 60;
@@ -96,6 +100,7 @@ betText.x = 60;
 betText.y = APP_HEIGHT - 42;
 app.stage.addChild(betText);
 
+// ── WIN ───────────────────────────────────────────────────
 const winLabel = new PIXI.Text('WIN', labelStyle);
 winLabel.x = 220;
 winLabel.y = APP_HEIGHT - 115;
@@ -106,6 +111,18 @@ winText.x = 220;
 winText.y = APP_HEIGHT - 95;
 app.stage.addChild(winText);
 
+// ── AUTO SPINS RESTANTES ──────────────────────────────────
+const autoLabel = new PIXI.Text('AUTO', labelStyle);
+autoLabel.x = 370;
+autoLabel.y = APP_HEIGHT - 115;
+app.stage.addChild(autoLabel);
+
+const autoText = new PIXI.Text('', valueStyle);
+autoText.x = 370;
+autoText.y = APP_HEIGHT - 95;
+app.stage.addChild(autoText);
+
+// ── FUNCIÓN BOTONES PEQUEÑOS ──────────────────────────────
 function makeTextButton(label, x, y, onClick) {
   const container       = new PIXI.Container();
   container.x           = x;
@@ -138,14 +155,20 @@ function makeTextButton(label, x, y, onClick) {
   return container;
 }
 
+// ── BET - y + ─────────────────────────────────────────────
 makeTextButton('-', 155, APP_HEIGHT - 50, () => {
-  if (bet > 1) { bet = Math.max(1, bet - 5); betText.text = `${bet}`; }
+  if (!isSpinning && !autoPlaying) {
+    if (bet > 1) { bet = Math.max(1, bet - 5); betText.text = `${bet}`; }
+  }
 });
 
 makeTextButton('+', 200, APP_HEIGHT - 50, () => {
-  if (bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
+  if (!isSpinning && !autoPlaying) {
+    if (bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
+  }
 });
 
+// ── BOTÓN SPIN ────────────────────────────────────────────
 const spinContainer       = new PIXI.Container();
 spinContainer.x           = APP_WIDTH / 2 - 70;
 spinContainer.y           = APP_HEIGHT - 110;
@@ -173,8 +196,132 @@ spinContainer.on('pointerover', () => {
   if (!isSpinning) { spinBg.tint = 0xddaa00; }
 });
 spinContainer.on('pointerout', () => { spinBg.tint = 0xFFFFFF; });
-
 app.stage.addChild(spinContainer);
+
+// ── SELECTOR DE CANTIDAD DE AUTOSPINS (flechas separadas) ─
+const autoBtnOptions = [10, 25, 50, 100];
+let selectedAuto     = 0;
+
+// Etiqueta SPINS
+const spinsLabel = new PIXI.Text('SPINS', labelStyle);
+spinsLabel.x = APP_WIDTH - 175;
+spinsLabel.y = APP_HEIGHT - 115;
+app.stage.addChild(spinsLabel);
+
+// Flecha izquierda — botón independiente
+const arrowLeft       = new PIXI.Container();
+arrowLeft.x           = APP_WIDTH - 180;
+arrowLeft.y           = APP_HEIGHT - 58;
+arrowLeft.interactive = true;
+arrowLeft.cursor      = 'pointer';
+app.stage.addChild(arrowLeft);
+
+const arrowLeftBg = new PIXI.Graphics();
+arrowLeftBg.beginFill(0x1e1e3f);
+arrowLeftBg.lineStyle(1, 0x5555cc);
+arrowLeftBg.drawRoundedRect(0, 0, 30, 28, 6);
+arrowLeftBg.endFill();
+arrowLeft.addChild(arrowLeftBg);
+
+const arrowLeftTxt = new PIXI.Text('◀', {
+  fontFamily: 'Arial Black',
+  fontSize:   12,
+  fill:       0xaaaaff,
+});
+arrowLeftTxt.anchor.set(0.5);
+arrowLeftTxt.x = 15;
+arrowLeftTxt.y = 14;
+arrowLeft.addChild(arrowLeftTxt);
+
+arrowLeft.on('pointerdown', () => {
+  if (!autoPlaying) {
+    selectedAuto     = (selectedAuto - 1 + autoBtnOptions.length) % autoBtnOptions.length;
+    spinCountTxt.text = `${autoBtnOptions[selectedAuto]}`;
+  }
+});
+arrowLeft.on('pointerover', () => { arrowLeftBg.tint = 0xaaaaff; });
+arrowLeft.on('pointerout',  () => { arrowLeftBg.tint = 0xFFFFFF; });
+
+// Número de spins seleccionado
+const spinCountTxt = new PIXI.Text(`${autoBtnOptions[selectedAuto]}`, {
+  fontFamily: 'Arial Black',
+  fontSize:   20,
+  fill:       0xFFFFFF,
+  fontWeight: 'bold',
+});
+spinCountTxt.anchor.set(0.5);
+spinCountTxt.x = APP_WIDTH - 127;
+spinCountTxt.y = APP_HEIGHT - 44;
+app.stage.addChild(spinCountTxt);
+
+// Flecha derecha — botón independiente
+const arrowRight       = new PIXI.Container();
+arrowRight.x           = APP_WIDTH - 110;
+arrowRight.y           = APP_HEIGHT - 58;
+arrowRight.interactive = true;
+arrowRight.cursor      = 'pointer';
+app.stage.addChild(arrowRight);
+
+const arrowRightBg = new PIXI.Graphics();
+arrowRightBg.beginFill(0x1e1e3f);
+arrowRightBg.lineStyle(1, 0x5555cc);
+arrowRightBg.drawRoundedRect(0, 0, 30, 28, 6);
+arrowRightBg.endFill();
+arrowRight.addChild(arrowRightBg);
+
+const arrowRightTxt = new PIXI.Text('▶', {
+  fontFamily: 'Arial Black',
+  fontSize:   12,
+  fill:       0xaaaaff,
+});
+arrowRightTxt.anchor.set(0.5);
+arrowRightTxt.x = 15;
+arrowRightTxt.y = 14;
+arrowRight.addChild(arrowRightTxt);
+
+arrowRight.on('pointerdown', () => {
+  if (!autoPlaying) {
+    selectedAuto      = (selectedAuto + 1) % autoBtnOptions.length;
+    spinCountTxt.text = `${autoBtnOptions[selectedAuto]}`;
+  }
+});
+arrowRight.on('pointerover', () => { arrowRightBg.tint = 0xaaaaff; });
+arrowRight.on('pointerout',  () => { arrowRightBg.tint = 0xFFFFFF; });
+
+// ── BOTÓN AUTO/STOP — completamente separado ──────────────
+const autoContainer       = new PIXI.Container();
+autoContainer.x           = APP_WIDTH - 180;
+autoContainer.y           = APP_HEIGHT - 112;
+autoContainer.interactive = true;
+autoContainer.cursor      = 'pointer';
+app.stage.addChild(autoContainer);
+
+const autoBg = new PIXI.Graphics();
+_drawAutoBtn(autoBg, false);
+autoContainer.addChild(autoBg);
+
+const autoTxt = new PIXI.Text('AUTO', {
+  fontFamily:    'Arial Black',
+  fontSize:      18,
+  fill:          0x0a0a0f,
+  fontWeight:    'bold',
+  letterSpacing: 2,
+});
+autoTxt.anchor.set(0.5);
+autoTxt.x = 55;
+autoTxt.y = 22;
+autoContainer.addChild(autoTxt);
+
+autoContainer.on('pointerdown', _onAutoPlay);
+autoContainer.on('pointerover', () => { autoBg.tint = 0xbbccff; });
+autoContainer.on('pointerout',  () => { autoBg.tint = 0xFFFFFF; });
+
+function _drawAutoBtn(g, active) {
+  g.clear();
+  g.beginFill(active ? 0xff4444 : 0x4488ff);
+  g.drawRoundedRect(0, 0, 110, 44, 10);
+  g.endFill();
+}
 
 function _drawSpinBtn(g, disabled) {
   g.clear();
@@ -183,6 +330,27 @@ function _drawSpinBtn(g, disabled) {
   g.endFill();
 }
 
+// ── LÓGICA AUTOPLAY ───────────────────────────────────────
+function _onAutoPlay() {
+  if (isSpinning && !autoPlaying) return;
+
+  if (autoPlaying) {
+    autoPlaying   = false;
+    autoSpinsLeft = 0;
+    autoText.text = '';
+    autoTxt.text  = 'AUTO';
+    _drawAutoBtn(autoBg, false);
+    return;
+  }
+
+  autoSpinsLeft = autoBtnOptions[selectedAuto];
+  autoPlaying   = true;
+  autoTxt.text  = 'STOP';
+  _drawAutoBtn(autoBg, true);
+  _onSpin();
+}
+
+// ── LÓGICA SPIN ───────────────────────────────────────────
 function _onSpin() {
   if (isSpinning || balance < bet) return;
 
@@ -228,6 +396,20 @@ function _checkWins() {
 
   isSpinning = false;
   _drawSpinBtn(spinBg, false);
+
+  if (autoPlaying) {
+    autoSpinsLeft--;
+    autoText.text = `${autoSpinsLeft}`;
+
+    if (autoSpinsLeft <= 0 || balance < bet) {
+      autoPlaying   = false;
+      autoText.text = '';
+      autoTxt.text  = 'AUTO';
+      _drawAutoBtn(autoBg, false);
+    } else {
+      setTimeout(() => _onSpin(), 600);
+    }
+  }
 }
 
 // ── PANTALLAS ENCIMA DEL JUEGO ────────────────────────────
@@ -235,4 +417,4 @@ new LoadingScreen(app, () => {
   new StartScreen(app, () => {
     console.log('ready');
   });
-}); 
+});
