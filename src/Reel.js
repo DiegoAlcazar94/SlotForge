@@ -36,29 +36,28 @@ export class Reel {
   }
 
   _createSymbol(data, rowIndex) {
-    const container = new PIXI.Container();
-    container.y     = rowIndex * SYMBOL_SIZE;
-    container.symbolData = data;
+  const container = new PIXI.Container();
+  container.y     = rowIndex * SYMBOL_SIZE;
+  container.symbolData = data;
 
-    // Fondo del símbolo
-    const bg = new PIXI.Graphics();
-    bg.beginFill(0x1a1a2e);
-    bg.lineStyle(2, 0x444466, 0.8);
-    bg.drawRoundedRect(4, 4, SYMBOL_SIZE - 8, SYMBOL_SIZE - 8, 10);
-    bg.endFill();
-    container.addChild(bg);
+  // Brillo suave detrás del símbolo en lugar del recuadro azul
+  const glow = new PIXI.Graphics();
+  glow.beginFill(0xFFD700, 0.08);
+  glow.drawRoundedRect(6, 6, SYMBOL_SIZE - 12, SYMBOL_SIZE - 12, 10);
+  glow.endFill();
+  container.addChild(glow);
 
-    // Sprite de la imagen
-    const sprite   = PIXI.Sprite.from(data.path);
-    sprite.width   = SYMBOL_SIZE - 16;
-    sprite.height  = SYMBOL_SIZE - 16;
-    sprite.x       = 8;
-    sprite.y       = 8;
-    container.addChild(sprite);
+  // Sprite de la imagen
+  const sprite  = PIXI.Sprite.from(data.path);
+  sprite.width  = SYMBOL_SIZE - 8;
+  sprite.height = SYMBOL_SIZE - 8;
+  sprite.x      = 4;
+  sprite.y      = 4;
+  container.addChild(sprite);
 
-    this.container.addChild(container);
-    return container;
-  }
+  this.container.addChild(container);
+  return container;
+}
 
   spin(onComplete = null) {
     if (this.spinning) return;
