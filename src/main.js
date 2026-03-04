@@ -12,7 +12,7 @@ const APP_WIDTH   = 1392;
 const APP_HEIGHT  = 768;
 const REEL_COUNT  = 5;
 const ROW_COUNT   = 3;
-const SYMBOL_SIZE = 83;
+const SYMBOL_SIZE = 100;
 const PANEL_H     = 160;
 
 const MARCO_W = 1044;
@@ -20,8 +20,8 @@ const MARCO_H = 576;
 const MARCO_X = (APP_WIDTH  - MARCO_W) / 2;
 const MARCO_Y = 30;
 
-const reelAreaX = 488;
-const reelAreaY = 187;
+const reelAreaX = 450;
+const reelAreaY = 190;
 const reelGap   = 5;
 
 const app = new PIXI.Application({
