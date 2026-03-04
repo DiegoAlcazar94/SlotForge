@@ -86,17 +86,11 @@ app.stage.addChild(girl2);
 const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
 
 // ── PANEL INFERIOR ────────────────────────────────────────
-const panel = new PIXI.Graphics();
-panel.beginFill(0x0a0a0f, 0.88);
-panel.drawRect(0, APP_HEIGHT - PANEL_H, APP_WIDTH, PANEL_H);
-panel.endFill();
-app.stage.addChild(panel);
-
-const panelLine = new PIXI.Graphics();
-panelLine.lineStyle(2, 0x3333aa, 0.8);
-panelLine.moveTo(0, APP_HEIGHT - PANEL_H);
-panelLine.lineTo(APP_WIDTH, APP_HEIGHT - PANEL_H);
-app.stage.addChild(panelLine);
+const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
+bannerInferior.anchor.set(0.5, 1);
+bannerInferior.x = APP_WIDTH / 2;
+bannerInferior.y = APP_HEIGHT - 10;
+app.stage.addChild(bannerInferior);
 
 const labelStyle = new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 14, fill: 0x8888bb, letterSpacing: 3 });
 const valueStyle = new PIXI.TextStyle({ fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, fontWeight: 'bold' });
