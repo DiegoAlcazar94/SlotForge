@@ -89,7 +89,7 @@ const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reel
 const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
 bannerInferior.anchor.set(0.5, 1);
 bannerInferior.x = APP_WIDTH / 2;
-bannerInferior.y = APP_HEIGHT - 10;
+bannerInferior.y = APP_HEIGHT - 40;
 app.stage.addChild(bannerInferior);
 
 const labelStyle = new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 14, fill: 0x8888bb, letterSpacing: 3 });
