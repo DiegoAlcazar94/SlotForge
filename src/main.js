@@ -13,7 +13,7 @@ const APP_HEIGHT  = 768;
 const REEL_COUNT  = 5;
 const ROW_COUNT   = 3;
 const SYMBOL_SIZE = 100;
-const PANEL_H     = 160;
+const PANEL_H     = 185;
 
 const MARCO_W = 1044;
 const MARCO_H = 576;
@@ -85,11 +85,17 @@ app.stage.addChild(girl2);
 
 const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
 
-// ── PANEL INFERIOR ────────────────────────────────────────
+// ── BANNER INFERIOR ───────────────────────────────────────
 const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
 bannerInferior.anchor.set(0.5, 1);
 bannerInferior.x = APP_WIDTH / 2;
-bannerInferior.y = APP_HEIGHT - 40;
+bannerInferior.y = APP_HEIGHT - 10;
+
+PIXI.Texture.fromURL('src/Assets/Symbols/BannerInferior.png').then(tex => {
+  const scale = (PANEL_H - 10) / tex.height;
+  bannerInferior.scale.set(bannerscale);
+});
+
 app.stage.addChild(bannerInferior);
 
 const labelStyle = new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 14, fill: 0x8888bb, letterSpacing: 3 });
@@ -156,24 +162,27 @@ makeTextButton('+', 262, APP_HEIGHT - PANEL_H + 98, () => {
   if (!isSpinning && !autoPlaying && bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
 });
 
+// ── BOTÓN SPIN ────────────────────────────────────────────
 const spinContainer       = new PIXI.Container();
-spinContainer.x           = APP_WIDTH / 2 - 80;
-spinContainer.y           = APP_HEIGHT - PANEL_H + 15;
+spinContainer.x           = APP_WIDTH / 2 - 110;
+spinContainer.y           = APP_HEIGHT - PANEL_H - 50;
 spinContainer.interactive = true;
 spinContainer.cursor      = 'pointer';
 
-const spinBg = new PIXI.Graphics();
-_drawSpinBtn(spinBg, false);
-spinContainer.addChild(spinBg);
+const spinBtn    = PIXI.Sprite.from('src/Assets/Symbols/Button1.png');
+spinBtn.width    = 210;
+spinBtn.height   = 210;
+spinContainer.addChild(spinBtn);
 
-const spinTxt = new PIXI.Text('SPIN', { fontFamily: 'Arial Black', fontSize: 30, fill: 0x0a0a0f, fontWeight: 'bold', letterSpacing: 4 });
-spinTxt.anchor.set(0.5); spinTxt.x = 80; spinTxt.y = 65;
-spinContainer.addChild(spinTxt);
-spinContainer.on('pointerdown', _onSpin);
-spinContainer.on('pointerover', () => { if (!isSpinning) spinBg.tint = 0xddaa00; });
-spinContainer.on('pointerout',  () => { spinBg.tint = 0xFFFFFF; });
+spinContainer.on('pointerdown', () => {
+  spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button2.png');
+  _onSpin();
+});
+spinContainer.on('pointerup',  () => { spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png'); });
+spinContainer.on('pointerout', () => { spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png'); });
 app.stage.addChild(spinContainer);
 
+// ── SELECTOR AUTOSPINS ────────────────────────────────────
 const autoBtnOptions = [10, 25, 50, 100];
 let selectedAuto     = 0;
 
@@ -233,6 +242,7 @@ arrowRight.on('pointerdown', () => {
 arrowRight.on('pointerover', () => { arrowRightBg.tint = 0xaaaaff; });
 arrowRight.on('pointerout',  () => { arrowRightBg.tint = 0xFFFFFF; });
 
+// ── BOTÓN AUTO/STOP ───────────────────────────────────────
 const autoContainer       = new PIXI.Container();
 autoContainer.x           = APP_WIDTH - 235;
 autoContainer.y           = APP_HEIGHT - PANEL_H + 18;
@@ -258,13 +268,6 @@ function _drawAutoBtn(g, active) {
   g.endFill();
 }
 
-function _drawSpinBtn(g, disabled) {
-  g.clear();
-  g.beginFill(disabled ? 0x555555 : 0xFFD700);
-  g.drawRoundedRect(0, 0, 160, 125, 16);
-  g.endFill();
-}
-
 function _onAutoPlay() {
   if (isSpinning && !autoPlaying) return;
   if (autoPlaying) {
@@ -286,7 +289,6 @@ function _onSpin() {
   winText.text     = '0';
   balance         -= bet;
   balanceText.text = `${balance}`;
-  _drawSpinBtn(spinBg, true);
   reels.forEach((reel, i) => {
     setTimeout(() => {
       soundManager.playReelTick();
@@ -330,7 +332,7 @@ function _checkWins() {
   }
 
   isSpinning = false;
-  _drawSpinBtn(spinBg, false);
+  spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png');
 
   if (autoPlaying) {
     autoSpinsLeft--;
