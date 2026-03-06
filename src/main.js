@@ -24,6 +24,28 @@ const reelAreaX = 450;
 const reelAreaY = 190;
 const reelGap   = 5;
 
+// ── ESCALAS UI ────────────────────────────────────────────
+const SCALE_BANNER   = 0.5;
+const SCALE_AUTO_BTN = 0.105;
+const SCALE_BET_BTN  = 0.06;
+const SCALE_HUECO    = 0.2;
+const SCALE_GIRL1    = 1.0;
+const SCALE_GIRL2    = 1.0;
+
+// ── TAMAÑO BOTÓN SPIN ─────────────────────────────────────
+const SPIN_BTN_SIZE  = 210;
+
+// ── POSICIONES PANEL — de izquierda a derecha ─────────────
+const PANEL_Y        = APP_HEIGHT - PANEL_H;
+const PANEL_MID_Y    = PANEL_Y + PANEL_H / 2;       // centro vertical del panel
+
+const BAL_X          = 60;                           // 1. Balance
+const BET_CENTER_X   = 280;                          // 2. Bet controls
+const BET_GAP        = 55;                           // separación less/add respecto al hueco
+const SPIN_X         = APP_WIDTH / 2 - SPIN_BTN_SIZE / 2; // 3. Spin (centrado)
+const AUTO_X         = APP_WIDTH / 2 + 140;          // 4. Auto button
+const SPINS_X        = APP_WIDTH - 220;              // 5. Selector spins
+
 const app = new PIXI.Application({
   width: APP_WIDTH,
   height: APP_HEIGHT,
@@ -69,7 +91,7 @@ app.stage.addChild(marco);
 
 // ── GIRL LEFT ─────────────────────────────────────────────
 const girl1  = PIXI.Sprite.from('src/Assets/Symbols/Girl1.png');
-girl1.height = MARCO_H;
+girl1.height = MARCO_H * SCALE_GIRL1;
 girl1.width  = girl1.height * (500 / 800);
 girl1.x      = MARCO_X - girl1.width + 170;
 girl1.y      = MARCO_Y;
@@ -77,7 +99,7 @@ app.stage.addChild(girl1);
 
 // ── GIRL RIGHT ────────────────────────────────────────────
 const girl2  = PIXI.Sprite.from('src/Assets/Symbols/Girl2.png');
-girl2.height = MARCO_H;
+girl2.height = MARCO_H * SCALE_GIRL2;
 girl2.width  = girl2.height * (500 / 800);
 girl2.x      = MARCO_X + MARCO_W - 190;
 girl2.y      = MARCO_Y;
@@ -89,89 +111,90 @@ const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reel
 const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
 bannerInferior.anchor.set(0.5, 1);
 bannerInferior.x = APP_WIDTH / 2;
-bannerInferior.y = APP_HEIGHT - 10;
-
-PIXI.Texture.fromURL('src/Assets/Symbols/BannerInferior.png').then(tex => {
-  const scale = (PANEL_H - 10) / tex.height;
-  bannerInferior.scale.set(bannerscale);
-});
-
+bannerInferior.y = APP_HEIGHT;
+bannerInferior.scale.set(SCALE_BANNER);
 app.stage.addChild(bannerInferior);
 
 const labelStyle = new PIXI.TextStyle({ fontFamily: 'Arial', fontSize: 14, fill: 0x8888bb, letterSpacing: 3 });
 const valueStyle = new PIXI.TextStyle({ fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, fontWeight: 'bold' });
 
+// ── 1. BALANCE ────────────────────────────────────────────
 const balanceLabel = new PIXI.Text('BALANCE', labelStyle);
-balanceLabel.x = 80; balanceLabel.y = APP_HEIGHT - PANEL_H + 15;
+balanceLabel.anchor.set(0, 0.5);
+balanceLabel.x = BAL_X;
+balanceLabel.y = PANEL_MID_Y - 18;
 app.stage.addChild(balanceLabel);
 
 const balanceText = new PIXI.Text(`${balance}`, valueStyle);
-balanceText.x = 80; balanceText.y = APP_HEIGHT - PANEL_H + 35;
+balanceText.anchor.set(0, 0.5);
+balanceText.x = BAL_X;
+balanceText.y = PANEL_MID_Y + 12;
 app.stage.addChild(balanceText);
 
+// ── 2. BET CONTROLS ───────────────────────────────────────
 const betLabel = new PIXI.Text('BET', labelStyle);
-betLabel.x = 80; betLabel.y = APP_HEIGHT - PANEL_H + 88;
+betLabel.anchor.set(0.5, 0.5);
+betLabel.x = BET_CENTER_X;
+betLabel.y = PANEL_MID_Y - 38;
 app.stage.addChild(betLabel);
 
+const huecoSprite = PIXI.Sprite.from('src/Assets/Symbols/Hueco.png');
+huecoSprite.scale.set(SCALE_HUECO);
+huecoSprite.anchor.set(0.5, 0.5);
+huecoSprite.x = BET_CENTER_X;
+huecoSprite.y = PANEL_MID_Y + 10;
+app.stage.addChild(huecoSprite);
+
 const betText = new PIXI.Text(`${bet}`, valueStyle);
-betText.x = 80; betText.y = APP_HEIGHT - PANEL_H + 108;
+betText.anchor.set(0.5, 0.5);
+betText.x = BET_CENTER_X;
+betText.y = PANEL_MID_Y + 10;
 app.stage.addChild(betText);
 
-const winLabel = new PIXI.Text('WIN', labelStyle);
-winLabel.x = 300; winLabel.y = APP_HEIGHT - PANEL_H + 15;
-app.stage.addChild(winLabel);
-
-const winText = new PIXI.Text('0', valueStyle);
-winText.x = 300; winText.y = APP_HEIGHT - PANEL_H + 35;
-app.stage.addChild(winText);
-
-const autoLabel = new PIXI.Text('AUTO', labelStyle);
-autoLabel.x = 520; autoLabel.y = APP_HEIGHT - PANEL_H + 15;
-app.stage.addChild(autoLabel);
-
-const autoText = new PIXI.Text('', valueStyle);
-autoText.x = 520; autoText.y = APP_HEIGHT - PANEL_H + 35;
-app.stage.addChild(autoText);
-
-function makeTextButton(label, x, y, onClick) {
-  const container       = new PIXI.Container();
-  container.x           = x;
-  container.y           = y;
-  container.interactive = true;
-  container.cursor      = 'pointer';
-  const bg = new PIXI.Graphics();
-  bg.beginFill(0x1e1e3f);
-  bg.lineStyle(1, 0x5555cc);
-  bg.drawRoundedRect(0, 0, 44, 30, 6);
-  bg.endFill();
-  container.addChild(bg);
-  const txt = new PIXI.Text(label, { fontFamily: 'Arial Black', fontSize: 15, fill: 0xaaaaff });
-  txt.anchor.set(0.5); txt.x = 22; txt.y = 15;
-  container.addChild(txt);
-  container.on('pointerdown', onClick);
-  container.on('pointerover', () => { bg.tint = 0xaaaaff; });
-  container.on('pointerout',  () => { bg.tint = 0xFFFFFF; });
-  app.stage.addChild(container);
-  return container;
-}
-
-makeTextButton('-', 210, APP_HEIGHT - PANEL_H + 98, () => {
+const lessContainer       = new PIXI.Container();
+lessContainer.interactive = true;
+lessContainer.cursor      = 'pointer';
+const lessBtn             = PIXI.Sprite.from('src/Assets/Symbols/ButtonLess.png');
+lessBtn.scale.set(SCALE_BET_BTN);
+lessBtn.anchor.set(0.5, 0.5);
+lessContainer.addChild(lessBtn);
+lessContainer.x = BET_CENTER_X - BET_GAP;
+lessContainer.y = PANEL_MID_Y + 10;
+lessContainer.on('pointerdown', () => {
+  lessBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonLess2.png');
   if (!isSpinning && !autoPlaying && bet > 1) { bet = Math.max(1, bet - 5); betText.text = `${bet}`; }
 });
-makeTextButton('+', 262, APP_HEIGHT - PANEL_H + 98, () => {
+lessContainer.on('pointerup',  () => { lessBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonLess.png'); });
+lessContainer.on('pointerout', () => { lessBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonLess.png'); });
+app.stage.addChild(lessContainer);
+
+const addContainer       = new PIXI.Container();
+addContainer.interactive = true;
+addContainer.cursor      = 'pointer';
+const addBtn             = PIXI.Sprite.from('src/Assets/Symbols/ButtonAdd.png');
+addBtn.scale.set(SCALE_BET_BTN);
+addBtn.anchor.set(0.5, 0.5);
+addContainer.addChild(addBtn);
+addContainer.x = BET_CENTER_X + BET_GAP;
+addContainer.y = PANEL_MID_Y + 10;
+addContainer.on('pointerdown', () => {
+  addBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAdd2.png');
   if (!isSpinning && !autoPlaying && bet < balance) { bet = Math.min(balance, bet + 5); betText.text = `${bet}`; }
 });
+addContainer.on('pointerup',  () => { addBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAdd.png'); });
+addContainer.on('pointerout', () => { addBtn.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAdd.png'); });
+app.stage.addChild(addContainer);
 
-// ── BOTÓN SPIN ────────────────────────────────────────────
+// ── 3. BOTÓN SPIN ─────────────────────────────────────────
 const spinContainer       = new PIXI.Container();
-spinContainer.x           = APP_WIDTH / 2 - 110;
-spinContainer.y           = APP_HEIGHT - PANEL_H - 50;
+spinContainer.x           = SPIN_X;
+spinContainer.y           = APP_HEIGHT - PANEL_H - 30;
 spinContainer.interactive = true;
 spinContainer.cursor      = 'pointer';
 
-const spinBtn    = PIXI.Sprite.from('src/Assets/Symbols/Button1.png');
-spinBtn.width    = 210;
-spinBtn.height   = 210;
+const spinBtn  = PIXI.Sprite.from('src/Assets/Symbols/Button1.png');
+spinBtn.width  = SPIN_BTN_SIZE;
+spinBtn.height = SPIN_BTN_SIZE;
 spinContainer.addChild(spinBtn);
 
 spinContainer.on('pointerdown', () => {
@@ -182,17 +205,35 @@ spinContainer.on('pointerup',  () => { spinBtn.texture = PIXI.Texture.from('src/
 spinContainer.on('pointerout', () => { spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png'); });
 app.stage.addChild(spinContainer);
 
-// ── SELECTOR AUTOSPINS ────────────────────────────────────
+// ── 4. BOTÓN AUTO ─────────────────────────────────────────
+const autoContainer       = new PIXI.Container();
+autoContainer.x           = AUTO_X;
+autoContainer.y           = PANEL_MID_Y - 25;
+autoContainer.interactive = true;
+autoContainer.cursor      = 'pointer';
+
+const autoBtnSprite = PIXI.Sprite.from('src/Assets/Symbols/ButtonAuto.png');
+autoBtnSprite.scale.set(SCALE_AUTO_BTN);
+autoContainer.addChild(autoBtnSprite);
+app.stage.addChild(autoContainer);
+
+autoContainer.on('pointerdown', () => { _onAutoPlay(); });
+autoContainer.on('pointerup',   () => {});
+autoContainer.on('pointerout',  () => {});
+
+// ── 5. SELECTOR AUTOSPINS ─────────────────────────────────
 const autoBtnOptions = [10, 25, 50, 100];
 let selectedAuto     = 0;
 
 const spinsLabel = new PIXI.Text('SPINS', labelStyle);
-spinsLabel.x = APP_WIDTH - 230; spinsLabel.y = APP_HEIGHT - PANEL_H + 15;
+spinsLabel.anchor.set(0.5, 0.5);
+spinsLabel.x = SPINS_X;
+spinsLabel.y = PANEL_MID_Y - 38;
 app.stage.addChild(spinsLabel);
 
 const arrowLeft       = new PIXI.Container();
-arrowLeft.x           = APP_WIDTH - 235;
-arrowLeft.y           = APP_HEIGHT - PANEL_H + 98;
+arrowLeft.x           = SPINS_X - 55;
+arrowLeft.y           = PANEL_MID_Y;
 arrowLeft.interactive = true;
 arrowLeft.cursor      = 'pointer';
 app.stage.addChild(arrowLeft);
@@ -214,14 +255,14 @@ arrowLeft.on('pointerover', () => { arrowLeftBg.tint = 0xaaaaff; });
 arrowLeft.on('pointerout',  () => { arrowLeftBg.tint = 0xFFFFFF; });
 
 const spinCountTxt = new PIXI.Text(`${autoBtnOptions[selectedAuto]}`, { fontFamily: 'Arial Black', fontSize: 22, fill: 0xFFFFFF, fontWeight: 'bold' });
-spinCountTxt.anchor.set(0.5);
-spinCountTxt.x = APP_WIDTH - 178;
-spinCountTxt.y = APP_HEIGHT - PANEL_H + 113;
+spinCountTxt.anchor.set(0.5, 0.5);
+spinCountTxt.x = SPINS_X;
+spinCountTxt.y = PANEL_MID_Y + 15;
 app.stage.addChild(spinCountTxt);
 
 const arrowRight       = new PIXI.Container();
-arrowRight.x           = APP_WIDTH - 150;
-arrowRight.y           = APP_HEIGHT - PANEL_H + 98;
+arrowRight.x           = SPINS_X + 22;
+arrowRight.y           = PANEL_MID_Y;
 arrowRight.interactive = true;
 arrowRight.cursor      = 'pointer';
 app.stage.addChild(arrowRight);
@@ -242,42 +283,25 @@ arrowRight.on('pointerdown', () => {
 arrowRight.on('pointerover', () => { arrowRightBg.tint = 0xaaaaff; });
 arrowRight.on('pointerout',  () => { arrowRightBg.tint = 0xFFFFFF; });
 
-// ── BOTÓN AUTO/STOP ───────────────────────────────────────
-const autoContainer       = new PIXI.Container();
-autoContainer.x           = APP_WIDTH - 235;
-autoContainer.y           = APP_HEIGHT - PANEL_H + 18;
-autoContainer.interactive = true;
-autoContainer.cursor      = 'pointer';
-app.stage.addChild(autoContainer);
-
-const autoBg = new PIXI.Graphics();
-_drawAutoBtn(autoBg, false);
-autoContainer.addChild(autoBg);
-
-const autoTxt = new PIXI.Text('AUTO', { fontFamily: 'Arial Black', fontSize: 20, fill: 0x0a0a0f, fontWeight: 'bold', letterSpacing: 2 });
-autoTxt.anchor.set(0.5); autoTxt.x = 60; autoTxt.y = 24;
-autoContainer.addChild(autoTxt);
-autoContainer.on('pointerdown', _onAutoPlay);
-autoContainer.on('pointerover', () => { autoBg.tint = 0xbbccff; });
-autoContainer.on('pointerout',  () => { autoBg.tint = 0xFFFFFF; });
-
-function _drawAutoBtn(g, active) {
-  g.clear();
-  g.beginFill(active ? 0xff4444 : 0x4488ff);
-  g.drawRoundedRect(0, 0, 120, 48, 10);
-  g.endFill();
-}
+// ── AUTO SPINS RESTANTES ──────────────────────────────────
+const autoText = new PIXI.Text('', new PIXI.TextStyle({ fontFamily: 'Arial Black', fontSize: 18, fill: 0xFFFFFF }));
+autoText.anchor.set(0.5, 0.5);
+autoText.x = SPINS_X;
+autoText.y = PANEL_MID_Y - 15;
+app.stage.addChild(autoText);
 
 function _onAutoPlay() {
   if (isSpinning && !autoPlaying) return;
   if (autoPlaying) {
-    autoPlaying = false; autoSpinsLeft = 0; autoText.text = ''; autoTxt.text = 'AUTO';
-    _drawAutoBtn(autoBg, false); return;
+    autoPlaying   = false;
+    autoSpinsLeft = 0;
+    autoText.text = '';
+    autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto.png');
+    return;
   }
   autoSpinsLeft = autoBtnOptions[selectedAuto];
   autoPlaying   = true;
-  autoTxt.text  = 'STOP';
-  _drawAutoBtn(autoBg, true);
+  autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto2.png');
   _onSpin();
 }
 
@@ -286,7 +310,6 @@ function _onSpin() {
   winAnimator.clear();
   isSpinning       = true;
   reelsStopped     = 0;
-  winText.text     = '0';
   balance         -= bet;
   balanceText.text = `${balance}`;
   reels.forEach((reel, i) => {
@@ -324,7 +347,6 @@ function _checkWins() {
 
   if (total > 0) {
     balance         += total;
-    winText.text     = `${total}`;
     balanceText.text = `${balance}`;
     winAnimator.celebrateGirls();
   } else {
@@ -338,8 +360,9 @@ function _checkWins() {
     autoSpinsLeft--;
     autoText.text = `${autoSpinsLeft}`;
     if (autoSpinsLeft <= 0 || balance < bet) {
-      autoPlaying = false; autoText.text = ''; autoTxt.text = 'AUTO';
-      _drawAutoBtn(autoBg, false);
+      autoPlaying   = false;
+      autoText.text = '';
+      autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto.png');
     } else {
       setTimeout(() => _onSpin(), 600);
     }
