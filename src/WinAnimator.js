@@ -36,6 +36,51 @@ export class WinAnimator {
     this._pulsing = true;
   }
 
+  highlightBonuses(positions) {
+    const sz = this.symbolSize;
+    const BONUS_COLOR = 0xFF6600;
+    for (const { reel, row } of positions) {
+      const frame = new PIXI.Graphics();
+      frame.lineStyle(4, BONUS_COLOR, 1);
+      frame.drawRoundedRect(
+        this.reelAreaX + reel * (sz + this.reelSpacing) + 2,
+        this.reelAreaY + row  * sz + 2,
+        sz - 4, sz - 4, 8
+      );
+      this.overlayContainer.addChild(frame);
+
+      const pulse = new PIXI.Graphics();
+      pulse.beginFill(BONUS_COLOR, 0.18);
+      pulse.drawRoundedRect(
+        this.reelAreaX + reel * (sz + this.reelSpacing) + 2,
+        this.reelAreaY + row  * sz + 2,
+        sz - 4, sz - 4, 8
+      );
+      pulse.endFill();
+      this.overlayContainer.addChild(pulse);
+
+      // Small burst particles on each bonus symbol
+      const cx = this.reelAreaX + reel * (sz + this.reelSpacing) + sz / 2;
+      const cy = this.reelAreaY + row * sz + sz / 2;
+      for (let p = 0; p < 12; p++) {
+        const particle = new PIXI.Graphics();
+        particle.beginFill(BONUS_COLOR, 0.9);
+        particle.drawCircle(0, 0, Math.random() * 4 + 2);
+        particle.endFill();
+        particle.x   = cx;
+        particle.y   = cy;
+        const angle  = Math.random() * Math.PI * 2;
+        const speed  = Math.random() * 5 + 2;
+        particle._vx = Math.cos(angle) * speed;
+        particle._vy = Math.sin(angle) * speed - 2;
+        particle._life = 1;
+        this.overlayContainer.addChild(particle);
+        this._particles.push(particle);
+      }
+    }
+    this._pulsing = true;
+  }
+
   highlightScatters(positions) {
     const sz = this.symbolSize;
     for (const { reel, row } of positions) {

@@ -44,6 +44,20 @@ export class WinChecker {
     return { count, payout, positions };
   }
 
+  checkBonus(reelsSymbols) {
+    const positions = [];
+    for (let reel = 0; reel < reelsSymbols.length; reel++) {
+      for (let row = 0; row < reelsSymbols[reel].length; row++) {
+        if (reelsSymbols[reel][row].id === 'bonus') {
+          positions.push({ reel, row });
+        }
+      }
+    }
+    const count = positions.length;
+    if (count < 3) return null;
+    return { count, positions };
+  }
+
   _evaluateLine(symbols, bet) {
     let baseSymbol = null;
     for (const sym of symbols) {

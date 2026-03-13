@@ -7,6 +7,7 @@ import { SoundManager } from './SoundManager.js';
 import { ScaleManager } from './ScaleManager.js';
 import { LoadingScreen } from './LoadingScreen.js';
 import { StartScreen } from './StartScreen.js';
+import { FreeSpinsManager } from './FreeSpinsManager.js';
 
 const APP_WIDTH   = 1392;
 const APP_HEIGHT  = 768;
@@ -106,6 +107,8 @@ girl2.y      = MARCO_Y;
 app.stage.addChild(girl2);
 
 const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
+const freeSpinsManager = new FreeSpinsManager(app, APP_WIDTH, APP_HEIGHT);
+let inFreeSpins = false;
 
 // ── BANNER INFERIOR ───────────────────────────────────────
 const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
@@ -306,12 +309,18 @@ function _onAutoPlay() {
 }
 
 function _onSpin() {
-  if (isSpinning || balance < bet) return;
+  if (isSpinning) return;
+  if (!inFreeSpins && balance < bet) return;
+
   winAnimator.clear();
-  isSpinning       = true;
-  reelsStopped     = 0;
-  balance         -= bet;
-  balanceText.text = `${balance}`;
+  isSpinning   = true;
+  reelsStopped = 0;
+
+  if (!inFreeSpins) {
+    balance         -= bet;
+    balanceText.text = `${balance}`;
+  }
+
   reels.forEach((reel, i) => {
     setTimeout(() => {
       soundManager.playReelTick();
@@ -328,19 +337,22 @@ function _checkWins() {
   const matrix  = reels.map(reel => reel.getVisibleSymbols());
   const wins    = winChecker.check(matrix, bet);
   const scatter = winChecker.checkScatter(matrix, bet);
+  const bonus   = !inFreeSpins ? winChecker.checkBonus(matrix) : null;
 
   winAnimator.clear();
 
+  const multiplier = inFreeSpins ? freeSpinsManager.getMultiplier() : 1;
   let total = 0;
 
   if (wins.length > 0) {
-    total += wins.reduce((sum, w) => sum + w.payout, 0);
+    const winsTotal = wins.reduce((sum, w) => sum + w.payout, 0) * multiplier;
+    total += winsTotal;
     winAnimator.playWins(wins, reels);
-    soundManager.playWin(total / bet);
+    soundManager.playWin(winsTotal / bet);
   }
 
   if (scatter) {
-    total += scatter.payout;
+    total += scatter.payout * multiplier;
     winAnimator.highlightScatters(scatter.positions);
     soundManager.playWin(scatter.payout / bet);
   }
@@ -349,6 +361,7 @@ function _checkWins() {
     balance         += total;
     balanceText.text = `${balance}`;
     winAnimator.celebrateGirls();
+    if (inFreeSpins) freeSpinsManager.addWin(total);
   } else {
     soundManager.playNoWin();
   }
@@ -356,6 +369,44 @@ function _checkWins() {
   isSpinning = false;
   spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png');
 
+  // ── FREE SPINS FLOW ───────────────────────────────────────
+  if (inFreeSpins) {
+    const remaining = freeSpinsManager.consumeSpin();
+    const delay     = total > 0 ? 1400 : 600;
+    if (remaining <= 0) {
+      setTimeout(() => {
+        soundManager.playFreeSpinComplete();
+        freeSpinsManager.end(() => {
+          inFreeSpins = false;
+          spinContainer.interactive = true;
+          spinContainer.alpha       = 1;
+        });
+      }, delay);
+    } else {
+      setTimeout(() => _onSpin(), 1000);
+    }
+    return;
+  }
+
+  // ── BONUS TRIGGER (only outside free spins) ───────────────
+  if (bonus) {
+    winAnimator.highlightBonuses(bonus.positions);
+    soundManager.playBonusTrigger();
+    spinContainer.interactive = false;
+    spinContainer.alpha       = 0.5;
+    autoPlaying   = false;   // pause auto-play for free spins
+    autoText.text = '';
+    autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto.png');
+    setTimeout(() => {
+      freeSpinsManager.trigger(() => {
+        inFreeSpins = true;
+        _onSpin();
+      });
+    }, 900);
+    return;
+  }
+
+  // ── NORMAL AUTO-PLAY ──────────────────────────────────────
   if (autoPlaying) {
     autoSpinsLeft--;
     autoText.text = `${autoSpinsLeft}`;
