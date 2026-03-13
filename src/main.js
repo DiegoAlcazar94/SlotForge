@@ -8,6 +8,7 @@ import { ScaleManager } from './ScaleManager.js';
 import { LoadingScreen } from './LoadingScreen.js';
 import { StartScreen } from './StartScreen.js';
 import { FreeSpinsManager } from './FreeSpinsManager.js';
+import { BigWinScreen } from './BigWinScreen.js';
 
 const APP_WIDTH   = 1392;
 const APP_HEIGHT  = 768;
@@ -25,27 +26,22 @@ const reelAreaX = 450;
 const reelAreaY = 190;
 const reelGap   = 5;
 
-// ── ESCALAS UI ────────────────────────────────────────────
 const SCALE_BANNER   = 0.5;
 const SCALE_AUTO_BTN = 0.105;
 const SCALE_BET_BTN  = 0.06;
 const SCALE_HUECO    = 0.2;
 const SCALE_GIRL1    = 1.0;
 const SCALE_GIRL2    = 1.0;
-
-// ── TAMAÑO BOTÓN SPIN ─────────────────────────────────────
 const SPIN_BTN_SIZE  = 210;
 
-// ── POSICIONES PANEL — de izquierda a derecha ─────────────
-const PANEL_Y        = APP_HEIGHT - PANEL_H;
-const PANEL_MID_Y    = PANEL_Y + PANEL_H / 2;       // centro vertical del panel
-
-const BAL_X          = 60;                           // 1. Balance
-const BET_CENTER_X   = 280;                          // 2. Bet controls
-const BET_GAP        = 55;                           // separación less/add respecto al hueco
-const SPIN_X         = APP_WIDTH / 2 - SPIN_BTN_SIZE / 2; // 3. Spin (centrado)
-const AUTO_X         = APP_WIDTH / 2 + 140;          // 4. Auto button
-const SPINS_X        = APP_WIDTH - 220;              // 5. Selector spins
+const PANEL_Y      = APP_HEIGHT - PANEL_H;
+const PANEL_MID_Y  = PANEL_Y + PANEL_H / 2;
+const BAL_X        = 60;
+const BET_CENTER_X = 280;
+const BET_GAP      = 55;
+const SPIN_X       = APP_WIDTH / 2 - SPIN_BTN_SIZE / 2;
+const AUTO_X       = APP_WIDTH / 2 + 140;
+const SPINS_X      = APP_WIDTH - 220;
 
 const app = new PIXI.Application({
   width: APP_WIDTH,
@@ -106,9 +102,10 @@ girl2.x      = MARCO_X + MARCO_W - 190;
 girl2.y      = MARCO_Y;
 app.stage.addChild(girl2);
 
-const winAnimator = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
+const winAnimator      = new WinAnimator(app, reelAreaX, reelAreaY, SYMBOL_SIZE, reelGap, girl1, girl2);
 const freeSpinsManager = new FreeSpinsManager(app, APP_WIDTH, APP_HEIGHT);
-let inFreeSpins = false;
+const bigWinScreen     = new BigWinScreen(app, APP_WIDTH, APP_HEIGHT);
+let inFreeSpins        = false;
 
 // ── BANNER INFERIOR ───────────────────────────────────────
 const bannerInferior = PIXI.Sprite.from('src/Assets/Symbols/BannerInferior.png');
@@ -293,6 +290,8 @@ autoText.x = SPINS_X;
 autoText.y = PANEL_MID_Y - 15;
 app.stage.addChild(autoText);
 
+// ── LÓGICA ────────────────────────────────────────────────
+
 function _onAutoPlay() {
   if (isSpinning && !autoPlaying) return;
   if (autoPlaying) {
@@ -333,6 +332,35 @@ function _onSpin() {
   });
 }
 
+function _afterBigWin() {
+  // Retoma el flujo normal después de cerrar la pantalla de big win
+  if (inFreeSpins) {
+    const remaining = freeSpinsManager.consumeSpin();
+    if (remaining <= 0) {
+      soundManager.playFreeSpinComplete();
+      freeSpinsManager.end(() => {
+        inFreeSpins = false;
+        spinContainer.interactive = true;
+        spinContainer.alpha       = 1;
+      });
+    } else {
+      setTimeout(() => _onSpin(), 800);
+    }
+    return;
+  }
+  if (autoPlaying) {
+    autoSpinsLeft--;
+    autoText.text = `${autoSpinsLeft}`;
+    if (autoSpinsLeft <= 0 || balance < bet) {
+      autoPlaying   = false;
+      autoText.text = '';
+      autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto.png');
+    } else {
+      setTimeout(() => _onSpin(), 800);
+    }
+  }
+}
+
 function _checkWins() {
   const matrix  = reels.map(reel => reel.getVisibleSymbols());
   const wins    = winChecker.check(matrix, bet);
@@ -357,17 +385,30 @@ function _checkWins() {
     soundManager.playWin(scatter.payout / bet);
   }
 
+  isSpinning = false;
+  spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png');
+
   if (total > 0) {
     balance         += total;
     balanceText.text = `${balance}`;
-    winAnimator.celebrateGirls();
     if (inFreeSpins) freeSpinsManager.addWin(total);
+
+    // ── BIG WIN CHECK ──────────────────────────────────────
+    const tier = BigWinScreen.getTier(total, bet);
+    if (tier) {
+      if      (tier.id === 'super') soundManager.playSuperWin();
+      else if (tier.id === 'mega')  soundManager.playMegaWin();
+      else                          soundManager.playBigWin();
+
+      winAnimator.celebrateGirls();
+      bigWinScreen.show(tier, total, _afterBigWin);
+      return; // flujo continúa desde _afterBigWin
+    }
+
+    winAnimator.celebrateGirls();
   } else {
     soundManager.playNoWin();
   }
-
-  isSpinning = false;
-  spinBtn.texture = PIXI.Texture.from('src/Assets/Symbols/Button1.png');
 
   // ── FREE SPINS FLOW ───────────────────────────────────────
   if (inFreeSpins) {
@@ -388,13 +429,13 @@ function _checkWins() {
     return;
   }
 
-  // ── BONUS TRIGGER (only outside free spins) ───────────────
+  // ── BONUS TRIGGER ─────────────────────────────────────────
   if (bonus) {
     winAnimator.highlightBonuses(bonus.positions);
     soundManager.playBonusTrigger();
     spinContainer.interactive = false;
     spinContainer.alpha       = 0.5;
-    autoPlaying   = false;   // pause auto-play for free spins
+    autoPlaying   = false;
     autoText.text = '';
     autoBtnSprite.texture = PIXI.Texture.from('src/Assets/Symbols/ButtonAuto.png');
     setTimeout(() => {
